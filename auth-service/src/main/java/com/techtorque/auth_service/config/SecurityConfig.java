@@ -15,7 +15,19 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
+                // Allow unauthenticated access to login and health endpoints
                 .requestMatchers("/login", "/health").permitAll()
+                // Allow unauthenticated access to OpenAPI and Swagger UI endpoints
+                .requestMatchers(
+                    "/v3/api-docs/**",
+                    "/v3/api-docs",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/swagger-ui/index.html",
+                    "/swagger-ui/index.html/**",
+                    "/swagger-resources/**",
+                    "/webjars/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             );
         
