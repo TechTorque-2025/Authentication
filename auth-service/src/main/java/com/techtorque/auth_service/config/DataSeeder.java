@@ -61,7 +61,8 @@ public class DataSeeder implements CommandLineRunner {
      */
     private void createRoleIfNotExists(RoleName roleName) {
         if (!roleRepository.existsByName(roleName)) {
-            Role role = new Role(roleName);
+            Role role = new Role(); // Use default constructor
+            role.setName(roleName); // Set the role name
             roleRepository.save(role);
             logger.info("Created role: {}", roleName);
         }

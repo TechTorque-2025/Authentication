@@ -7,9 +7,6 @@ import lombok.Builder;
 
 import java.util.Set;
 
-/**
- * DTO for login response containing JWT token and user information
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,7 +19,6 @@ public class LoginResponse {
     private String email;
     private Set<String> roles;
     
-    // Constructor without token type (defaults to "Bearer")
     public LoginResponse(String token, String username, String email, Set<String> roles) {
         this.token = token;
         this.type = "Bearer";

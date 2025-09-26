@@ -16,10 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/**
- * Security configuration class
- * Configures JWT-based authentication and authorization
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
@@ -31,28 +27,16 @@ public class SecurityConfig {
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
     
-    /**
-     * JWT authentication filter bean
-     * @return AuthTokenFilter instance
-     */
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
         return new AuthTokenFilter();
     }
     
-    /**
-     * Password encoder bean using BCrypt
-     * @return BCryptPasswordEncoder instance
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
     
-    /**
-     * Authentication provider bean
-     * @return DaoAuthenticationProvider configured with UserDetailsService and PasswordEncoder
-     */
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -61,36 +45,20 @@ public class SecurityConfig {
         return authProvider;
     }
     
-    /**
-     * Authentication manager bean
-     * @param authConfig Authentication configuration
-     * @return AuthenticationManager instance
-     * @throws Exception if configuration fails
-     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
     
-    /**
-     * Security filter chain configuration
-     * @param http HttpSecurity configuration
-     * @return SecurityFilterChain configured for JWT authentication
-     * @throws Exception if configuration fails
-     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors().and().csrf().disable()
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeHttpRequests()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/api/auth/test").authenticated()
+                .requestMatchers("/auth/**").permitAll() // Fixed path mapping
+                .requestMatchers("/auth/test").authenticated()
                 .anyRequest().authenticated();
-        
-        // Disable frame options for H2 console
-        http.headers().frameOptions().disable();
         
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);

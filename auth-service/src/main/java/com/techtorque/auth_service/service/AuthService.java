@@ -24,10 +24,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Service class for handling authentication operations
- * Manages user login, registration, and JWT token generation
- */
 @Service
 @Transactional
 public class AuthService {
@@ -47,13 +43,7 @@ public class AuthService {
     @Autowired
     private JwtUtil jwtUtil;
     
-    /**
-     * Authenticate user and generate JWT token
-     * @param loginRequest Login credentials
-     * @return LoginResponse with JWT token and user details
-     */
     public LoginResponse authenticateUser(LoginRequest loginRequest) {
-        // Authenticate user credentials
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsername(),
@@ -63,16 +53,13 @@ public class AuthService {
         
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         
-        // Extract roles from authorities
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .map(auth -> auth.replace("ROLE_", "")) // Remove ROLE_ prefix
+                .map(auth -> auth.replace("ROLE_", ""))
                 .collect(Collectors.toList());
         
-        // Generate JWT token
         String jwt = jwtUtil.generateJwtToken(userDetails, roles);
         
-        // Get user details for response
         User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
@@ -83,28 +70,20 @@ public class AuthService {
         return LoginResponse.builder()
                 .token(jwt)
                 .username(user.getUsername())
-                .email(user.getEmail())
+                .email(user.getEmail()) // This was missing in the error
                 .roles(roleNames)
                 .build();
     }
     
-    /**
-     * Register a new user with specified roles
-     * @param registerRequest Registration details
-     * @return Success message
-     */
     public String registerUser(RegisterRequest registerRequest) {
-        // Check if username already exists
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
             throw new RuntimeException("Error: Username is already taken!");
         }
         
-        // Check if email already exists
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
             throw new RuntimeException("Error: Email is already in use!");
         }
         
-        // Create new user
         User user = User.builder()
                 .username(registerRequest.getUsername())
                 .email(registerRequest.getEmail())
@@ -113,12 +92,10 @@ public class AuthService {
                 .roles(new HashSet<>())
                 .build();
         
-        // Assign roles
         Set<String> strRoles = registerRequest.getRoles();
         Set<Role> roles = new HashSet<>();
         
         if (strRoles == null || strRoles.isEmpty()) {
-            // Default role is CUSTOMER
             Role customerRole = roleRepository.findByName(RoleName.CUSTOMER)
                     .orElseThrow(() -> new RuntimeException("Error: Customer Role not found."));
             roles.add(customerRole);
