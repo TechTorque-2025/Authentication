@@ -6,10 +6,13 @@ import com.techtorque.auth_service.entity.User;
 import com.techtorque.auth_service.repository.RoleRepository;
 import com.techtorque.auth_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -34,8 +37,7 @@ public class UserService implements UserDetailsService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-  @Autowired
-  public UserService(UserRepository userRepository, RoleRepository roleRepository, @Lazy PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, @Lazy PasswordEncoder passwordEncoder) {
     this.userRepository = userRepository;
     this.roleRepository = roleRepository;
     this.passwordEncoder = passwordEncoder;
@@ -98,17 +100,17 @@ public class UserService implements UserDetailsService {
     public User registerCustomer(String username, String email, String password) {
         // Validate username doesn't exist
         if (userRepository.findByUsername(username).isPresent()) {
-            throw new RuntimeException("Username already exists: " + username);
+            throw new IllegalArgumentException("Username already exists: " + username);
         }
         
         // Validate email doesn't exist
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email already exists: " + email);
+            throw new IllegalArgumentException("Email already exists: " + email);
         }
 
         // Get CUSTOMER role from database
-        Role customerRole = roleRepository.findByName(RoleName.CUSTOMER)
-                .orElseThrow(() -> new RuntimeException("Customer role not found"));
+    Role customerRole = roleRepository.findByName(RoleName.CUSTOMER)
+        .orElseThrow(() -> new EntityNotFoundException("Customer role not found"));
 
         // Create user with CUSTOMER role only
         User user = User.builder()
@@ -134,17 +136,17 @@ public class UserService implements UserDetailsService {
     public User createEmployee(String username, String email, String password) {
         // Validate username doesn't exist
         if (userRepository.findByUsername(username).isPresent()) {
-            throw new RuntimeException("Username already exists: " + username);
+            throw new IllegalArgumentException("Username already exists: " + username);
         }
         
         // Validate email doesn't exist
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email already exists: " + email);
+            throw new IllegalArgumentException("Email already exists: " + email);
         }
 
         // Get EMPLOYEE role from database
-        Role employeeRole = roleRepository.findByName(RoleName.EMPLOYEE)
-                .orElseThrow(() -> new RuntimeException("Employee role not found"));
+    Role employeeRole = roleRepository.findByName(RoleName.EMPLOYEE)
+        .orElseThrow(() -> new EntityNotFoundException("Employee role not found"));
 
         // Create user with EMPLOYEE role
         User user = User.builder()
@@ -170,17 +172,17 @@ public class UserService implements UserDetailsService {
     public User createAdmin(String username, String email, String password) {
         // Validate username doesn't exist
         if (userRepository.findByUsername(username).isPresent()) {
-            throw new RuntimeException("Username already exists: " + username);
+            throw new IllegalArgumentException("Username already exists: " + username);
         }
         
         // Validate email doesn't exist
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email already exists: " + email);
+            throw new IllegalArgumentException("Email already exists: " + email);
         }
 
         // Get ADMIN role from database
-        Role adminRole = roleRepository.findByName(RoleName.ADMIN)
-                .orElseThrow(() -> new RuntimeException("Admin role not found"));
+    Role adminRole = roleRepository.findByName(RoleName.ADMIN)
+        .orElseThrow(() -> new EntityNotFoundException("Admin role not found"));
 
         // Create user with ADMIN role
         User user = User.builder()
@@ -227,7 +229,7 @@ public class UserService implements UserDetailsService {
      */
     public Set<String> getUserPermissions(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         return user.getRoles().stream()
                 .flatMap(role -> role.getPermissions().stream())
@@ -242,7 +244,7 @@ public class UserService implements UserDetailsService {
      */
     public Set<String> getUserRoles(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         return user.getRoles().stream()
                 .map(role -> role.getName().name())
@@ -255,7 +257,7 @@ public class UserService implements UserDetailsService {
      */
     public void enableUser(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         user.setEnabled(true);
         userRepository.save(user);
     }
@@ -266,7 +268,7 @@ public class UserService implements UserDetailsService {
      */
     public void disableUser(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         user.setEnabled(false);
         userRepository.save(user);
     }
@@ -278,7 +280,7 @@ public class UserService implements UserDetailsService {
      */
     public void deleteUser(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         userRepository.delete(user);
     }
 
@@ -290,7 +292,7 @@ public class UserService implements UserDetailsService {
      */
     public boolean hasRole(String username, RoleName roleName) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         return user.getRoles().stream()
                 .anyMatch(role -> role.getName().equals(roleName));
@@ -304,7 +306,7 @@ public class UserService implements UserDetailsService {
      */
     public boolean hasPermission(String username, String permissionName) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         return user.getRoles().stream()
                 .flatMap(role -> role.getPermissions().stream())
@@ -322,12 +324,12 @@ public class UserService implements UserDetailsService {
      */
     public User updateUserDetails(String username, String newUsername, String newEmail, Boolean enabled) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         // Check if new username is provided and different
         if (newUsername != null && !newUsername.equals(user.getUsername())) {
             if (userRepository.existsByUsername(newUsername)) {
-                throw new RuntimeException("Username already exists: " + newUsername);
+                throw new IllegalArgumentException("Username already exists: " + newUsername);
             }
             user.setUsername(newUsername);
         }
@@ -335,7 +337,7 @@ public class UserService implements UserDetailsService {
         // Check if new email is provided and different
         if (newEmail != null && !newEmail.equals(user.getEmail())) {
             if (userRepository.existsByEmail(newEmail)) {
-                throw new RuntimeException("Email already exists: " + newEmail);
+                throw new IllegalArgumentException("Email already exists: " + newEmail);
             }
             user.setEmail(newEmail);
         }
@@ -356,7 +358,7 @@ public class UserService implements UserDetailsService {
      */
     public void resetUserPassword(String username, String newPassword) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
@@ -371,11 +373,11 @@ public class UserService implements UserDetailsService {
      */
     public void changeUserPassword(String username, String currentPassword, String newPassword) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         // Verify current password
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-            throw new RuntimeException("Current password is incorrect");
+            throw new IllegalStateException("Current password is incorrect");
         }
         
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -390,20 +392,34 @@ public class UserService implements UserDetailsService {
      */
     public void assignRoleToUser(String username, String roleName) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         RoleName roleNameEnum;
         try {
             roleNameEnum = RoleName.valueOf(roleName.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid role name: " + roleName);
+            throw new IllegalArgumentException("Invalid role name: " + roleName);
         }
         
-        Role role = roleRepository.findByName(roleNameEnum)
-                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+        // Rule: Only a SUPER_ADMIN can assign the ADMIN role.
+        if (roleNameEnum == RoleName.ADMIN) {
+            Authentication currentUser = SecurityContextHolder.getContext().getAuthentication();
+            if (currentUser == null) {
+                throw new AccessDeniedException("Permission denied: unauthenticated users cannot assign roles.");
+            }
+            boolean isSuperAdmin = currentUser.getAuthorities().stream()
+                    .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_SUPER_ADMIN"));
+
+            if (!isSuperAdmin) {
+                throw new AccessDeniedException("Permission denied: Only a SUPER_ADMIN can assign the ADMIN role.");
+            }
+        }
+        
+    Role role = roleRepository.findByName(roleNameEnum)
+        .orElseThrow(() -> new EntityNotFoundException("Role not found: " + roleName));
         
         if (user.getRoles().contains(role)) {
-            throw new RuntimeException("User already has role: " + roleName);
+            throw new IllegalStateException("User already has role: " + roleName);
         }
         
         user.getRoles().add(role);
@@ -418,21 +434,34 @@ public class UserService implements UserDetailsService {
      */
     public void revokeRoleFromUser(String username, String roleName) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         RoleName roleNameEnum;
         try {
             roleNameEnum = RoleName.valueOf(roleName.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid role name: " + roleName);
+            throw new IllegalArgumentException("Invalid role name: " + roleName);
         }
         
-        Role role = roleRepository.findByName(roleNameEnum)
-                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
-        
-        if (!user.getRoles().contains(role)) {
-            throw new RuntimeException("User does not have role: " + roleName);
+        // Rule: A user cannot revoke their own SUPER_ADMIN role.
+        if (roleNameEnum == RoleName.SUPER_ADMIN) {
+            Authentication currentUser = SecurityContextHolder.getContext().getAuthentication();
+            if (currentUser == null) {
+                throw new AccessDeniedException("Permission denied: unauthenticated users cannot revoke roles.");
+            }
+            String currentUsername = currentUser.getName();
+
+            if (currentUsername.equals(username)) {
+                throw new AccessDeniedException("Action denied: A SUPER_ADMIN cannot revoke their own SUPER_ADMIN role.");
+            }
         }
+
+    Role role = roleRepository.findByName(roleNameEnum)
+        .orElseThrow(() -> new EntityNotFoundException("Role not found: " + roleName));
+        
+    if (!user.getRoles().contains(role)) {
+        throw new IllegalStateException("User does not have role: " + roleName);
+    }
         
         user.getRoles().remove(role);
         userRepository.save(user);
