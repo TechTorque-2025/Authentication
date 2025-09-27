@@ -6,6 +6,8 @@ import com.techtorque.auth_service.entity.User;
 import com.techtorque.auth_service.repository.RoleRepository;
 import com.techtorque.auth_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,13 +27,19 @@ import java.util.stream.Collectors;
  * - Implements Spring Security's UserDetailsService for authentication
  */
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+
+  @Autowired
+  public UserService(UserRepository userRepository, RoleRepository roleRepository, @Lazy PasswordEncoder passwordEncoder) {
+    this.userRepository = userRepository;
+    this.roleRepository = roleRepository;
+    this.passwordEncoder = passwordEncoder;
+  }
 
     /**
      * Load user by username for Spring Security authentication
