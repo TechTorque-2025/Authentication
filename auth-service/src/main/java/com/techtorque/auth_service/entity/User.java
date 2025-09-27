@@ -7,7 +7,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
+/**
+ * User entity representing users in the authentication system
+ * Contains user credentials and role assignments
+ */
 @Entity
 @Table(name = "users")
 @Data
@@ -26,7 +32,7 @@ public class User {
     @Column(nullable = false)
     private String password;
     
-    @Column(nullable = false)
+    @Column(unique = true, nullable = false)
     private String email;
     
     @Column(nullable = false)
@@ -37,11 +43,28 @@ public class User {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     
+    // Many-to-Many relationship with Role entity
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    @Builder.Default
+    private Set<Role> roles = new HashSet<>();
+    
+    // Constructor for easy user creation
     public User(String username, String password, String email) {
         this.username = username;
         this.password = password;
         this.email = email;
         this.enabled = true;
         this.createdAt = LocalDateTime.now();
+        this.roles = new HashSet<>();
+    }
+    
+    // Helper method to add roles
+    public void addRole(Role role) {
+        this.roles.add(role);
     }
 }
