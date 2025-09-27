@@ -1,13 +1,16 @@
 package com.techtorque.auth_service.controller;
 
+import com.techtorque.auth_service.dto.CreateEmployeeRequest;
 import com.techtorque.auth_service.dto.LoginRequest;
 import com.techtorque.auth_service.dto.LoginResponse;
 import com.techtorque.auth_service.dto.RegisterRequest;
 import com.techtorque.auth_service.service.AuthService;
+import com.techtorque.auth_service.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -15,12 +18,17 @@ import org.springframework.web.bind.annotation.*;
  * Handles login, registration, and health check requests
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class AuthController {
     
     @Autowired
     private AuthService authService;
+    
+    // --- NEW DEPENDENCY ---
+    // We need UserService to call the createEmployee method
+    @Autowired
+    private UserService userService;
     
     /**
      * User login endpoint
@@ -51,6 +59,30 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse("Error: " + e.getMessage()));
+        }
+    }
+    
+    // --- NEW ENDPOINT FOR CREATING EMPLOYEES ---
+    /**
+     * ADMIN-ONLY endpoint for creating a new employee account.
+     * @param createEmployeeRequest DTO with username, email, and password.
+     * @return A success or error message.
+     */
+    @PostMapping("/users/employee")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> createEmployee(@Valid @RequestBody CreateEmployeeRequest createEmployeeRequest) {
+        try {
+            // Now we are calling the method that was previously unused
+            userService.createEmployee(
+                createEmployeeRequest.getUsername(),
+                createEmployeeRequest.getEmail(),
+                createEmployeeRequest.getPassword()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new MessageResponse("Employee account created successfully!"));
+        } catch (RuntimeException e) {
+            // Catches errors like "Username already exists"
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
         }
     }
     
