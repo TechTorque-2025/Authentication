@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -19,7 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // The 'prePostEnabled = true' is the default and not needed
+@EnableMethodSecurity
 public class SecurityConfig {
 
   @Autowired
@@ -51,28 +52,42 @@ public class SecurityConfig {
     return authConfig.getAuthenticationManager();
   }
 
+  // --- START OF THE DEFINITIVE FIX ---
+  /**
+   * This bean tells Spring Security to completely ignore the specified paths.
+   * This is the best practice for static resources like Swagger UI or the favicon.
+   * It bypasses the entire security filter chain, which is more efficient and avoids
+   * potential conflicts with custom filters like our AuthTokenFilter.
+   */
+  @Bean
+  public WebSecurityCustomizer webSecurityCustomizer() {
+    return (web) -> web.ignoring().requestMatchers(
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/swagger-resources",
+            "/swagger-resources/**",
+            "/webjars/**",
+            "/favicon.ico" // Also ignore the favicon requests
+    );
+  }
+  // --- END OF THE DEFINITIVE FIX ---
+
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
-            // 1. Disable CSRF and CORS using the new lambda style
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(AbstractHttpConfigurer::disable) // For production, you should configure this properly
-
-            // 2. Set up exception handling
+            .cors(AbstractHttpConfigurer::disable)
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-
-            // 3. Set the session management to stateless
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-            // 4. Set up authorization rules
             .authorizeHttpRequests(auth -> auth
-                    // Be specific with your paths. Your controller is likely under /api/v1/auth
-                    .requestMatchers("/api/v1/auth/**").permitAll()
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                    // Public authentication endpoints are still managed here
+                    .requestMatchers("/api/auth/**").permitAll()
+                    // All other requests require authentication
                     .anyRequest().authenticated()
             );
 
-    // 5. Add your custom provider and filter
     http.authenticationProvider(authenticationProvider());
     http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
