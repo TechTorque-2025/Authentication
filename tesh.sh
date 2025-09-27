@@ -71,6 +71,33 @@ run_test() {
     fi
 }
 
+# Run a request and assert HTTP status and that the body contains an expected substring
+# Usage: run_test_body_contains "Test Name" <Expected HTTP Status> <Method> <Endpoint> [JWT Token] [JSON Data] <Expected Substring>
+run_test_body_contains() {
+  local test_name=$1
+  local expected_status=$2
+  local method=$3
+  local endpoint=$4
+  local token=$5
+  local data=$6
+  local expected_substr=$7
+
+  local headers=(-H "Content-Type: application/json")
+  if [ -n "$token" ]; then
+    headers+=(-H "Authorization: Bearer $token")
+  fi
+
+  response=$(curl -s -w "\n%{http_code}" -X "$method" "${headers[@]}" -d "$data" "$BASE_URL$endpoint")
+  http_code=$(echo "$response" | tail -n1)
+  body=$(echo "$response" | sed '$d')
+
+  if [ "$http_code" == "$expected_status" ] && echo "$body" | grep -q "$expected_substr"; then
+    print_status "$test_name (Expected $expected_status, Got $http_code; body contains '$expected_substr')" "PASS"
+  else
+    print_status "$test_name (Expected $expected_status and body containing '$expected_substr'; Got $http_code) -- Body: $body" "FAIL"
+  fi
+}
+
 # --- Main Test Execution ---
 
 echo -e "${YELLOW}===============================================${NC}"
@@ -145,6 +172,24 @@ run_test "FAIL: Customer CANNOT create an Employee" 403 "POST" "/auth/users/empl
 # === 7. Final Cleanup Test ===
 echo -e "\n--- Testing Final Cleanup Action ---"
 run_test "Admin can delete a user" 200 "DELETE" "/users/$CUSTOMER_USER" "$ADMIN_TOKEN"
+
+
+# === 8. Lockout Policy Test ===
+echo -e "\n--- Testing Lockout Policy (3 failed attempts -> 15 minute lock) ---"
+LOCK_USER="locktest$UNIQUE_ID"
+LOCK_EMAIL="$LOCK_USER@techtorque.com"
+run_test "Create user for lock test" 200 "POST" "/auth/register" "" \
+  '{"username":"'$LOCK_USER'","email":"'$LOCK_EMAIL'","password":"correctPassword"}'
+
+# Perform 3 failed login attempts
+for i in 1 2 3; do
+  run_test "Failed login attempt #$i for $LOCK_USER" 401 "POST" "/auth/login" "" \
+    '{"username":"'$LOCK_USER'","password":"wrongPassword"}'
+done
+
+# Now the account should be locked; login with correct password should return a message indicating temporary lock
+run_test_body_contains "Locked account shows message" 401 "POST" "/auth/login" "" \
+  '{"username":"'$LOCK_USER'","password":"correctPassword"}' "temporarily locked"
 
 
 # === Summary ===

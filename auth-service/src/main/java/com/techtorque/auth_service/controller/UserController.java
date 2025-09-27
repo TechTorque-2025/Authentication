@@ -11,6 +11,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,9 +57,9 @@ public class UserController {
   public ResponseEntity<?> disableUser(@PathVariable String username) {
     try {
       userService.disableUser(username);
-      return ResponseEntity.ok(new AuthController.MessageResponse("User '" + username + "' has been disabled."));
+      return ResponseEntity.ok(Map.of("message", "User '" + username + "' has been disabled."));
     } catch (RuntimeException e) {
-      return ResponseEntity.notFound().build();
+      throw new RuntimeException(e.getMessage());
     }
   }
 
@@ -69,10 +70,20 @@ public class UserController {
   public ResponseEntity<?> enableUser(@PathVariable String username) {
     try {
       userService.enableUser(username);
-      return ResponseEntity.ok(new AuthController.MessageResponse("User '" + username + "' has been enabled."));
+      return ResponseEntity.ok(Map.of("message", "User '" + username + "' has been enabled."));
     } catch (RuntimeException e) {
-      return ResponseEntity.notFound().build();
+      throw new RuntimeException(e.getMessage());
     }
+  }
+  
+  /**
+   * Unlock a user's login lock (admin only)
+   */
+  @PostMapping("/{username}/unlock")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  public ResponseEntity<?> unlockUser(@PathVariable String username) {
+      userService.clearLoginLock(username);
+      return ResponseEntity.ok(Map.of("message", "Login lock cleared for user: " + username));
   }
 
   /**
@@ -82,9 +93,9 @@ public class UserController {
   public ResponseEntity<?> deleteUser(@PathVariable String username) {
     try {
       userService.deleteUser(username);
-      return ResponseEntity.ok(new AuthController.MessageResponse("User '" + username + "' has been deleted."));
+      return ResponseEntity.ok(Map.of("message", "User '" + username + "' has been deleted."));
     } catch (RuntimeException e) {
-      return ResponseEntity.notFound().build();
+      throw new RuntimeException(e.getMessage());
     }
   }
 
@@ -104,8 +115,7 @@ public class UserController {
       );
       return ResponseEntity.ok(convertToDto(updatedUser));
     } catch (RuntimeException e) {
-      return ResponseEntity.badRequest()
-              .body(new AuthController.MessageResponse("Error: " + e.getMessage()));
+      throw new RuntimeException(e.getMessage());
     }
   }
 
@@ -120,8 +130,7 @@ public class UserController {
       userService.resetUserPassword(username, resetRequest.getNewPassword());
       return ResponseEntity.ok(new AuthController.MessageResponse("Password reset successfully for user: " + username));
     } catch (RuntimeException e) {
-      return ResponseEntity.badRequest()
-              .body(new AuthController.MessageResponse("Error: " + e.getMessage()));
+      throw new RuntimeException(e.getMessage());
     }
   }
 
@@ -147,8 +156,7 @@ public class UserController {
       return ResponseEntity.status(403)
               .body(new AuthController.MessageResponse("Error: " + ade.getMessage()));
     } catch (RuntimeException e) {
-      return ResponseEntity.badRequest()
-              .body(new AuthController.MessageResponse("Error: " + e.getMessage()));
+      throw new RuntimeException(e.getMessage());
     }
   }
 

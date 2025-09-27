@@ -8,11 +8,13 @@ import com.techtorque.auth_service.dto.RegisterRequest;
 import com.techtorque.auth_service.service.AuthService;
 import com.techtorque.auth_service.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 /**
  * REST Controller for authentication endpoints
@@ -37,14 +39,9 @@ public class AuthController {
      * @return JWT token and user details
      */
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        try {
-            LoginResponse loginResponse = authService.authenticateUser(loginRequest);
-            return ResponseEntity.ok(loginResponse);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new MessageResponse("Error: " + e.getMessage()));
-        }
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+        LoginResponse loginResponse = authService.authenticateUser(loginRequest, request);
+        return ResponseEntity.ok(loginResponse);
     }
     
     /**
@@ -54,13 +51,8 @@ public class AuthController {
      */
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
-        try {
-            String message = authService.registerUser(registerRequest);
-            return ResponseEntity.ok(new MessageResponse(message));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new MessageResponse("Error: " + e.getMessage()));
-        }
+        String message = authService.registerUser(registerRequest);
+        return ResponseEntity.ok(Map.of("message", message));
     }
     
     // --- NEW ENDPOINT FOR CREATING EMPLOYEES ---

@@ -4,6 +4,7 @@ import com.techtorque.auth_service.entity.Role;
 import com.techtorque.auth_service.entity.RoleName;
 import com.techtorque.auth_service.entity.User;
 import com.techtorque.auth_service.repository.RoleRepository;
+import com.techtorque.auth_service.repository.LoginLockRepository;
 import com.techtorque.auth_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
@@ -33,15 +34,16 @@ import java.util.stream.Collectors;
 @Transactional
 public class UserService implements UserDetailsService {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, @Lazy PasswordEncoder passwordEncoder) {
-    this.userRepository = userRepository;
-    this.roleRepository = roleRepository;
-    this.passwordEncoder = passwordEncoder;
-  }
+        private final UserRepository userRepository;
+        private final RoleRepository roleRepository;
+        private final PasswordEncoder passwordEncoder;
+        private final LoginLockRepository loginLockRepository;
+        public UserService(UserRepository userRepository, RoleRepository roleRepository, @Lazy PasswordEncoder passwordEncoder, LoginLockRepository loginLockRepository) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.loginLockRepository = loginLockRepository;
+    }
 
     /**
      * Load user by username for Spring Security authentication
@@ -282,6 +284,20 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         userRepository.delete(user);
+    }
+
+    /**
+     * Clear login lock for a username (admin action).
+     * Resets failed attempts and lock timestamp if an entry exists.
+     */
+    public void clearLoginLock(String username) {
+        java.util.Optional<com.techtorque.auth_service.entity.LoginLock> lockOpt = loginLockRepository.findByUsername(username);
+        if (lockOpt.isPresent()) {
+            com.techtorque.auth_service.entity.LoginLock lock = lockOpt.get();
+            lock.setFailedAttempts(0);
+            lock.setLockUntil(null);
+            loginLockRepository.save(lock);
+        }
     }
 
     /**

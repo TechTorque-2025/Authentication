@@ -1,6 +1,7 @@
 package com.techtorque.auth_service.exception;
 
 import com.techtorque.auth_service.controller.AuthController;
+import com.techtorque.auth_service.dto.ApiError;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -58,8 +59,13 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         
         logger.warn("Constraint violation: {}", errors);
-        return ResponseEntity.badRequest()
-                .body(new AuthController.MessageResponse("Validation error: " + errors));
+    return ResponseEntity.badRequest()
+        .body(ApiError.builder()
+            .status(HttpStatus.BAD_REQUEST.value())
+            .message("Validation error")
+            .details(Map.of("errors", errors))
+            .timestamp(java.time.LocalDateTime.now())
+            .build());
     }
 
     /**
@@ -68,8 +74,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<?> handleAuthenticationException(AuthenticationException ex) {
         logger.warn("Authentication error: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new AuthController.MessageResponse("Authentication failed: " + ex.getMessage()));
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        .body(ApiError.builder()
+            .status(HttpStatus.UNAUTHORIZED.value())
+            .message("Authentication failed")
+            .details(Map.of("error", ex.getMessage()))
+            .timestamp(java.time.LocalDateTime.now())
+            .build());
     }
 
     /**
@@ -78,8 +89,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException ex) {
         logger.warn("Bad credentials: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new AuthController.MessageResponse("Invalid username or password"));
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        .body(ApiError.builder()
+            .status(HttpStatus.UNAUTHORIZED.value())
+            .message("Invalid username or password")
+            .details(Map.of("error", ex.getMessage()))
+            .timestamp(java.time.LocalDateTime.now())
+            .build());
     }
 
     /**
@@ -88,8 +104,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<?> handleAccessDeniedException(AccessDeniedException ex) {
         logger.warn("Access denied: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new AuthController.MessageResponse("Access denied: Insufficient privileges"));
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(ApiError.builder()
+            .status(HttpStatus.FORBIDDEN.value())
+            .message("Access denied: Insufficient privileges")
+            .timestamp(java.time.LocalDateTime.now())
+            .build());
     }
 
     /**
@@ -109,13 +129,21 @@ public class GlobalExceptionHandler {
             message.contains("does not have") ||
             message.contains("already has")
         )) {
-            return ResponseEntity.badRequest()
-                    .body(new AuthController.MessageResponse("Error: " + message));
+        return ResponseEntity.badRequest()
+            .body(ApiError.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .message(message)
+                .timestamp(java.time.LocalDateTime.now())
+                .build());
         }
         
         // For other runtime exceptions, return internal server error
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new AuthController.MessageResponse("An internal error occurred"));
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body(ApiError.builder()
+            .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+            .message("An internal error occurred")
+            .timestamp(java.time.LocalDateTime.now())
+            .build());
     }
 
     /**
@@ -124,7 +152,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGenericException(Exception ex) {
         logger.error("Unexpected error: ", ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new AuthController.MessageResponse("An unexpected error occurred"));
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body(ApiError.builder()
+            .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+            .message("An unexpected error occurred")
+            .timestamp(java.time.LocalDateTime.now())
+            .build());
     }
 }
