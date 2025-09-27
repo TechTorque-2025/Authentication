@@ -8,6 +8,7 @@ import com.techtorque.auth_service.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -32,6 +33,9 @@ public class DataSeeder implements CommandLineRunner {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private Environment env;
     
     @Override
     public void run(String... args) throws Exception {
@@ -40,8 +44,8 @@ public class DataSeeder implements CommandLineRunner {
         // First, create roles if they don't exist
         seedRoles();
         
-        // Then, seed users with proper roles
-        seedUsers();
+        // Then, seed users with proper roles depending on active profile
+        seedUsersByProfile();
         
         logger.info("Data seeding completed successfully!");
     }
@@ -50,6 +54,7 @@ public class DataSeeder implements CommandLineRunner {
      * Create all required roles in the system
      */
     private void seedRoles() {
+        createRoleIfNotExists(RoleName.SUPER_ADMIN);
         createRoleIfNotExists(RoleName.ADMIN);
         createRoleIfNotExists(RoleName.EMPLOYEE);
         createRoleIfNotExists(RoleName.CUSTOMER);
@@ -78,15 +83,48 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
         
-        // Create default test users with roles
-        createUserWithRole("admin", "admin123", "admin@techtorque.com", RoleName.ADMIN);
-        createUserWithRole("employee", "emp123", "employee@techtorque.com", RoleName.EMPLOYEE);
-        createUserWithRole("customer", "cust123", "customer@techtorque.com", RoleName.CUSTOMER);
+    // Create default test users with roles
+    // The first privileged account is the SUPER_ADMIN (created only once by the seeder)
+    createUserWithRole("superadmin", "superadmin123", "superadmin@techtorque.com", RoleName.SUPER_ADMIN);
+
+    // Create a regular ADMIN for day-to-day management (cannot create other ADMINs)
+    createUserWithRole("admin", "admin123", "admin@techtorque.com", RoleName.ADMIN);
+
+    createUserWithRole("employee", "emp123", "employee@techtorque.com", RoleName.EMPLOYEE);
+    createUserWithRole("customer", "cust123", "customer@techtorque.com", RoleName.CUSTOMER);
         
         // Keep your original test users as customers
         createUserWithRole("user", "password", "user@techtorque.com", RoleName.CUSTOMER);
         createUserWithRole("testuser", "test123", "test@techtorque.com", RoleName.CUSTOMER);
         createUserWithRole("demo", "demo123", "demo@techtorque.com", RoleName.CUSTOMER);
+    }
+
+    /**
+     * Seed users based on active Spring profile.
+     * - In 'dev' profile: create all test users (superadmin, admin, employee, customer, etc.)
+     * - In non-dev (e.g., production): only create the superadmin account to avoid seeding test data
+     */
+    private void seedUsersByProfile() {
+        String[] activeProfiles = env.getActiveProfiles();
+        boolean isDev = false;
+        for (String p : activeProfiles) {
+            if ("dev".equalsIgnoreCase(p)) {
+                isDev = true;
+                break;
+            }
+        }
+
+        if (isDev) {
+            // Full seeding for development
+            logger.info("Active profile is 'dev' — seeding development users (including test accounts).");
+            System.out.println("[DEV MODE] Seeding development users: superadmin, admin, employee, customer, test users.");
+            seedUsers();
+        } else {
+            // Production/non-dev: only ensure SUPER_ADMIN exists
+            createUserWithRole("superadmin", "superadmin123", "superadmin@techtorque.com", RoleName.SUPER_ADMIN);
+            // Optionally create a day-to-day admin (commented out by default for production)
+            // createUserWithRole("admin", "admin123", "admin@techtorque.com", RoleName.ADMIN);
+        }
     }
     
     /**

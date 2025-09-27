@@ -7,6 +7,7 @@ package com.techtorque.auth_service.entity;
  * CUSTOMER - Access to customer-specific features
  */
 public enum RoleName {
+    SUPER_ADMIN("Super Administrator - Manages Admins and the entire system"),
     ADMIN("Administrator - Full system access"),
     EMPLOYEE("Employee - Limited system access for staff operations"), 
     CUSTOMER("Customer - Access to customer-specific features");

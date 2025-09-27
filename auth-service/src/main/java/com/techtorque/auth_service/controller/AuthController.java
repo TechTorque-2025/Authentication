@@ -1,6 +1,7 @@
 package com.techtorque.auth_service.controller;
 
 import com.techtorque.auth_service.dto.CreateEmployeeRequest;
+import com.techtorque.auth_service.dto.CreateAdminRequest;
 import com.techtorque.auth_service.dto.LoginRequest;
 import com.techtorque.auth_service.dto.LoginResponse;
 import com.techtorque.auth_service.dto.RegisterRequest;
@@ -82,6 +83,28 @@ public class AuthController {
                     .body(new MessageResponse("Employee account created successfully!"));
         } catch (RuntimeException e) {
             // Catches errors like "Username already exists"
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
+        }
+    }
+
+    // --- NEW ENDPOINT FOR CREATING ADMINS (SUPER_ADMIN ONLY) ---
+    /**
+     * SUPER_ADMIN-ONLY endpoint for creating a new admin account.
+     * @param createAdminRequest DTO with username, email, and password.
+     * @return A success or error message.
+     */
+    @PostMapping("/users/admin")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> createAdmin(@Valid @RequestBody CreateAdminRequest createAdminRequest) {
+        try {
+            userService.createAdmin(
+                createAdminRequest.getUsername(),
+                createAdminRequest.getEmail(),
+                createAdminRequest.getPassword()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new MessageResponse("Admin account created successfully!"));
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
         }
     }

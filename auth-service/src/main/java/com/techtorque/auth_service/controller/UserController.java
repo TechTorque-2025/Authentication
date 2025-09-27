@@ -13,11 +13,12 @@ import java.util.stream.Collectors;
 
 /**
  * REST Controller for user management endpoints.
- * All endpoints in this controller are restricted to users with the ADMIN role.
+ * Endpoints in this controller are accessible to users with ADMIN or SUPER_ADMIN roles.
  */
 @RestController
 @RequestMapping("/api/v1/users")
-@PreAuthorize("hasRole('ADMIN')") // Secures ALL endpoints in this class
+@CrossOrigin(origins = "*", maxAge = 3600)
+@PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
 public class UserController {
 
   @Autowired
