@@ -11,7 +11,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,7 +56,7 @@ public class UserController {
   public ResponseEntity<?> disableUser(@PathVariable String username) {
     try {
       userService.disableUser(username);
-      return ResponseEntity.ok(Map.of("message", "User '" + username + "' has been disabled."));
+      return ResponseEntity.ok(ApiSuccess.of("User '" + username + "' has been disabled."));
     } catch (RuntimeException e) {
       throw new RuntimeException(e.getMessage());
     }
@@ -70,7 +69,7 @@ public class UserController {
   public ResponseEntity<?> enableUser(@PathVariable String username) {
     try {
       userService.enableUser(username);
-      return ResponseEntity.ok(Map.of("message", "User '" + username + "' has been enabled."));
+      return ResponseEntity.ok(ApiSuccess.of("User '" + username + "' has been enabled."));
     } catch (RuntimeException e) {
       throw new RuntimeException(e.getMessage());
     }
@@ -82,8 +81,8 @@ public class UserController {
   @PostMapping("/{username}/unlock")
   @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   public ResponseEntity<?> unlockUser(@PathVariable String username) {
-      userService.clearLoginLock(username);
-      return ResponseEntity.ok(Map.of("message", "Login lock cleared for user: " + username));
+    userService.clearLoginLock(username);
+    return ResponseEntity.ok(ApiSuccess.of("Login lock cleared for user: " + username));
   }
 
   /**
@@ -93,7 +92,7 @@ public class UserController {
   public ResponseEntity<?> deleteUser(@PathVariable String username) {
     try {
       userService.deleteUser(username);
-      return ResponseEntity.ok(Map.of("message", "User '" + username + "' has been deleted."));
+      return ResponseEntity.ok(ApiSuccess.of("User '" + username + "' has been deleted."));
     } catch (RuntimeException e) {
       throw new RuntimeException(e.getMessage());
     }
@@ -128,7 +127,7 @@ public class UserController {
                                            @Valid @RequestBody ResetPasswordRequest resetRequest) {
     try {
       userService.resetUserPassword(username, resetRequest.getNewPassword());
-      return ResponseEntity.ok(new AuthController.MessageResponse("Password reset successfully for user: " + username));
+      return ResponseEntity.ok(ApiSuccess.of("Password reset successfully for user: " + username));
     } catch (RuntimeException e) {
       throw new RuntimeException(e.getMessage());
     }
@@ -144,17 +143,21 @@ public class UserController {
     try {
       if (roleRequest.getAction() == RoleAssignmentRequest.RoleAction.ASSIGN) {
         userService.assignRoleToUser(username, roleRequest.getRoleName());
-        return ResponseEntity.ok(new AuthController.MessageResponse(
+        return ResponseEntity.ok(ApiSuccess.of(
             "Role '" + roleRequest.getRoleName() + "' assigned to user: " + username));
       } else {
         userService.revokeRoleFromUser(username, roleRequest.getRoleName());
-        return ResponseEntity.ok(new AuthController.MessageResponse(
+        return ResponseEntity.ok(ApiSuccess.of(
             "Role '" + roleRequest.getRoleName() + "' revoked from user: " + username));
       }
     } catch (AccessDeniedException ade) {
       // Specific handling for access denied so clients/tests receive 403 Forbidden
       return ResponseEntity.status(403)
-              .body(new AuthController.MessageResponse("Error: " + ade.getMessage()));
+              .body(ApiError.builder()
+                      .status(403)
+                      .message("Error: " + ade.getMessage())
+                      .timestamp(java.time.LocalDateTime.now())
+                      .build());
     } catch (RuntimeException e) {
       throw new RuntimeException(e.getMessage());
     }
@@ -176,7 +179,11 @@ public class UserController {
               .orElse(ResponseEntity.notFound().build());
     } catch (Exception e) {
       return ResponseEntity.badRequest()
-              .body(new AuthController.MessageResponse("Error: " + e.getMessage()));
+              .body(ApiError.builder()
+                      .status(400)
+                      .message("Error: " + e.getMessage())
+                      .timestamp(java.time.LocalDateTime.now())
+                      .build());
     }
   }
 
@@ -192,10 +199,14 @@ public class UserController {
       String username = authentication.getName();
       
       userService.changeUserPassword(username, changeRequest.getCurrentPassword(), changeRequest.getNewPassword());
-      return ResponseEntity.ok(new AuthController.MessageResponse("Password changed successfully"));
+      return ResponseEntity.ok(ApiSuccess.of("Password changed successfully"));
     } catch (RuntimeException e) {
       return ResponseEntity.badRequest()
-              .body(new AuthController.MessageResponse("Error: " + e.getMessage()));
+              .body(ApiError.builder()
+                      .status(400)
+                      .message("Error: " + e.getMessage())
+                      .timestamp(java.time.LocalDateTime.now())
+                      .build());
     }
   }
 

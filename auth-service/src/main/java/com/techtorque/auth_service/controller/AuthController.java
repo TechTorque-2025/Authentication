@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
+import com.techtorque.auth_service.dto.ApiSuccess;
 
 /**
  * REST Controller for authentication endpoints
@@ -52,7 +52,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         String message = authService.registerUser(registerRequest);
-        return ResponseEntity.ok(Map.of("message", message));
+        return ResponseEntity.ok(ApiSuccess.of(message));
     }
     
     // --- NEW ENDPOINT FOR CREATING EMPLOYEES ---
@@ -72,10 +72,10 @@ public class AuthController {
                 createEmployeeRequest.getPassword()
             );
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new MessageResponse("Employee account created successfully!"));
+                    .body(ApiSuccess.of("Employee account created successfully!"));
         } catch (RuntimeException e) {
             // Catches errors like "Username already exists"
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiSuccess.of("Error: " + e.getMessage()));
         }
     }
 
@@ -95,9 +95,9 @@ public class AuthController {
                 createAdminRequest.getPassword()
             );
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new MessageResponse("Admin account created successfully!"));
+                    .body(ApiSuccess.of("Admin account created successfully!"));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiSuccess.of("Error: " + e.getMessage()));
         }
     }
     
@@ -107,7 +107,7 @@ public class AuthController {
      */
     @GetMapping("/health")
     public ResponseEntity<?> health() {
-        return ResponseEntity.ok(new MessageResponse("Authentication Service is running!"));
+        return ResponseEntity.ok(ApiSuccess.of("Authentication Service is running!"));
     }
     
     /**
@@ -116,25 +116,7 @@ public class AuthController {
      */
     @GetMapping("/test")
     public ResponseEntity<?> test() {
-        return ResponseEntity.ok(new MessageResponse("Test endpoint accessible!"));
+        return ResponseEntity.ok(ApiSuccess.of("Test endpoint accessible!"));
     }
-    
-    /**
-     * Inner class for simple message responses
-     */
-    public static class MessageResponse {
-        private String message;
-        
-        public MessageResponse(String message) {
-            this.message = message;
-        }
-        
-        public String getMessage() {
-            return message;
-        }
-        
-        public void setMessage(String message) {
-            this.message = message;
-        }
-    }
+
 }
