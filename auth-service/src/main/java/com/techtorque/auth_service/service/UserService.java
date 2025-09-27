@@ -310,4 +310,131 @@ public class UserService implements UserDetailsService {
                 .flatMap(role -> role.getPermissions().stream())
                 .anyMatch(permission -> permission.getName().equals(permissionName));
     }
+
+    /**
+     * Update user details (admin only)
+     * @param username Username of the user to update
+     * @param newUsername New username (optional)
+     * @param newEmail New email (optional)
+     * @param enabled New enabled status (optional)
+     * @return Updated user
+     * @throws RuntimeException if user not found or new values already exist
+     */
+    public User updateUserDetails(String username, String newUsername, String newEmail, Boolean enabled) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        
+        // Check if new username is provided and different
+        if (newUsername != null && !newUsername.equals(user.getUsername())) {
+            if (userRepository.existsByUsername(newUsername)) {
+                throw new RuntimeException("Username already exists: " + newUsername);
+            }
+            user.setUsername(newUsername);
+        }
+        
+        // Check if new email is provided and different
+        if (newEmail != null && !newEmail.equals(user.getEmail())) {
+            if (userRepository.existsByEmail(newEmail)) {
+                throw new RuntimeException("Email already exists: " + newEmail);
+            }
+            user.setEmail(newEmail);
+        }
+        
+        // Update enabled status if provided
+        if (enabled != null) {
+            user.setEnabled(enabled);
+        }
+        
+        return userRepository.save(user);
+    }
+
+    /**
+     * Reset a user's password (admin only)
+     * @param username Username whose password to reset
+     * @param newPassword New password (plain text)
+     * @throws RuntimeException if user not found
+     */
+    public void resetUserPassword(String username, String newPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    /**
+     * Change user's own password (requires current password verification)
+     * @param username Username of the user changing password
+     * @param currentPassword Current password for verification
+     * @param newPassword New password (plain text)
+     * @throws RuntimeException if user not found or current password is incorrect
+     */
+    public void changeUserPassword(String username, String currentPassword, String newPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+        
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    /**
+     * Assign a role to a user (admin only)
+     * @param username Username to assign role to
+     * @param roleName Role name to assign
+     * @throws RuntimeException if user or role not found, or role already assigned
+     */
+    public void assignRoleToUser(String username, String roleName) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        
+        RoleName roleNameEnum;
+        try {
+            roleNameEnum = RoleName.valueOf(roleName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid role name: " + roleName);
+        }
+        
+        Role role = roleRepository.findByName(roleNameEnum)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+        
+        if (user.getRoles().contains(role)) {
+            throw new RuntimeException("User already has role: " + roleName);
+        }
+        
+        user.getRoles().add(role);
+        userRepository.save(user);
+    }
+
+    /**
+     * Revoke a role from a user (admin only)
+     * @param username Username to revoke role from
+     * @param roleName Role name to revoke
+     * @throws RuntimeException if user or role not found, or role not assigned
+     */
+    public void revokeRoleFromUser(String username, String roleName) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        
+        RoleName roleNameEnum;
+        try {
+            roleNameEnum = RoleName.valueOf(roleName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid role name: " + roleName);
+        }
+        
+        Role role = roleRepository.findByName(roleNameEnum)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+        
+        if (!user.getRoles().contains(role)) {
+            throw new RuntimeException("User does not have role: " + roleName);
+        }
+        
+        user.getRoles().remove(role);
+        userRepository.save(user);
+    }
 }

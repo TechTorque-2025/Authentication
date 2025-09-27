@@ -1,11 +1,14 @@
 package com.techtorque.auth_service.controller;
 
-import com.techtorque.auth_service.dto.UserDto;
+import com.techtorque.auth_service.dto.*;
 import com.techtorque.auth_service.entity.User;
 import com.techtorque.auth_service.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -81,6 +84,105 @@ public class UserController {
       return ResponseEntity.ok(new AuthController.MessageResponse("User '" + username + "' has been deleted."));
     } catch (RuntimeException e) {
       return ResponseEntity.notFound().build();
+    }
+  }
+
+  /**
+   * Update a user's details (admin only)
+   * PUT /api/v1/users/{username}
+   */
+  @PutMapping("/{username}")
+  public ResponseEntity<?> updateUser(@PathVariable String username, 
+                                     @Valid @RequestBody UpdateUserRequest updateRequest) {
+    try {
+      User updatedUser = userService.updateUserDetails(
+          username,
+          updateRequest.getUsername(),
+          updateRequest.getEmail(),
+          updateRequest.getEnabled()
+      );
+      return ResponseEntity.ok(convertToDto(updatedUser));
+    } catch (RuntimeException e) {
+      return ResponseEntity.badRequest()
+              .body(new AuthController.MessageResponse("Error: " + e.getMessage()));
+    }
+  }
+
+  /**
+   * Reset a user's password (admin only)
+   * POST /api/v1/users/{username}/reset-password
+   */
+  @PostMapping("/{username}/reset-password")
+  public ResponseEntity<?> resetUserPassword(@PathVariable String username,
+                                           @Valid @RequestBody ResetPasswordRequest resetRequest) {
+    try {
+      userService.resetUserPassword(username, resetRequest.getNewPassword());
+      return ResponseEntity.ok(new AuthController.MessageResponse("Password reset successfully for user: " + username));
+    } catch (RuntimeException e) {
+      return ResponseEntity.badRequest()
+              .body(new AuthController.MessageResponse("Error: " + e.getMessage()));
+    }
+  }
+
+  /**
+   * Assign or revoke a role to/from a user (admin only)
+   * POST /api/v1/users/{username}/roles
+   */
+  @PostMapping("/{username}/roles")
+  public ResponseEntity<?> manageUserRole(@PathVariable String username,
+                                         @Valid @RequestBody RoleAssignmentRequest roleRequest) {
+    try {
+      if (roleRequest.getAction() == RoleAssignmentRequest.RoleAction.ASSIGN) {
+        userService.assignRoleToUser(username, roleRequest.getRoleName());
+        return ResponseEntity.ok(new AuthController.MessageResponse(
+            "Role '" + roleRequest.getRoleName() + "' assigned to user: " + username));
+      } else {
+        userService.revokeRoleFromUser(username, roleRequest.getRoleName());
+        return ResponseEntity.ok(new AuthController.MessageResponse(
+            "Role '" + roleRequest.getRoleName() + "' revoked from user: " + username));
+      }
+    } catch (RuntimeException e) {
+      return ResponseEntity.badRequest()
+              .body(new AuthController.MessageResponse("Error: " + e.getMessage()));
+    }
+  }
+
+  /**
+   * Get current user's profile (user endpoint)
+   * GET /api/v1/users/me
+   */
+  @GetMapping("/me")
+  @PreAuthorize("hasRole('CUSTOMER') or hasRole('EMPLOYEE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  public ResponseEntity<?> getCurrentUserProfile() {
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      String username = authentication.getName();
+      
+      return userService.findByUsername(username)
+              .map(user -> ResponseEntity.ok(convertToDto(user)))
+              .orElse(ResponseEntity.notFound().build());
+    } catch (Exception e) {
+      return ResponseEntity.badRequest()
+              .body(new AuthController.MessageResponse("Error: " + e.getMessage()));
+    }
+  }
+
+  /**
+   * Change current user's password (user endpoint)
+   * POST /api/v1/users/me/change-password
+   */
+  @PostMapping("/me/change-password")
+  @PreAuthorize("hasRole('CUSTOMER') or hasRole('EMPLOYEE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  public ResponseEntity<?> changeCurrentUserPassword(@Valid @RequestBody ChangePasswordRequest changeRequest) {
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      String username = authentication.getName();
+      
+      userService.changeUserPassword(username, changeRequest.getCurrentPassword(), changeRequest.getNewPassword());
+      return ResponseEntity.ok(new AuthController.MessageResponse("Password changed successfully"));
+    } catch (RuntimeException e) {
+      return ResponseEntity.badRequest()
+              .body(new AuthController.MessageResponse("Error: " + e.getMessage()));
     }
   }
 
