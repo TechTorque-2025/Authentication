@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -52,27 +51,7 @@ public class SecurityConfig {
     return authConfig.getAuthenticationManager();
   }
 
-  // --- START OF THE DEFINITIVE FIX ---
-  /**
-   * This bean tells Spring Security to completely ignore the specified paths.
-   * This is the best practice for static resources like Swagger UI or the favicon.
-   * It bypasses the entire security filter chain, which is more efficient and avoids
-   * potential conflicts with custom filters like our AuthTokenFilter.
-   */
-  @Bean
-  public WebSecurityCustomizer webSecurityCustomizer() {
-    return (web) -> web.ignoring().requestMatchers(
-            "/swagger-ui.html",
-            "/swagger-ui/**",
-            "/v3/api-docs",
-            "/v3/api-docs/**",
-            "/swagger-resources",
-            "/swagger-resources/**",
-            "/webjars/**",
-            "/favicon.ico" // Also ignore the favicon requests
-    );
-  }
-  // --- END OF THE DEFINITIVE FIX ---
+  // NOTE: The WebSecurityCustomizer bean has been completely removed.
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -82,9 +61,28 @@ public class SecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                    // Public authentication endpoints are still managed here
-                    .requestMatchers("/api/auth/**").permitAll()
-                    // All other requests require authentication
+                    .requestMatchers(
+                            // Public API endpoints
+                            "/api/v1/auth/**",  // Fixed: more specific auth path
+                            "/api/auth/**",     // Keep both for backward compatibility
+
+                            // Public controller endpoints
+                            "/favicon.ico",
+                            "/error",           // Add error page
+                            
+                            // Health check and actuator endpoints (if needed)
+                            "/actuator/**",
+
+                            // All OpenAPI and Swagger UI resources
+                            "/v3/api-docs/**",
+                            "/swagger-ui/**",
+                            "/swagger-ui.html",
+                            "/swagger-resources/**", // Include swagger-resources
+                            "/webjars/**",          // Include webjars
+                            "/api-docs/**"          // Additional swagger endpoint pattern
+                    ).permitAll()
+
+                    // All other requests require authentication.
                     .anyRequest().authenticated()
             );
 

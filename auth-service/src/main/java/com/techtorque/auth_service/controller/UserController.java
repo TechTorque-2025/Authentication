@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -141,6 +142,10 @@ public class UserController {
         return ResponseEntity.ok(new AuthController.MessageResponse(
             "Role '" + roleRequest.getRoleName() + "' revoked from user: " + username));
       }
+    } catch (AccessDeniedException ade) {
+      // Specific handling for access denied so clients/tests receive 403 Forbidden
+      return ResponseEntity.status(403)
+              .body(new AuthController.MessageResponse("Error: " + ade.getMessage()));
     } catch (RuntimeException e) {
       return ResponseEntity.badRequest()
               .body(new AuthController.MessageResponse("Error: " + e.getMessage()));
