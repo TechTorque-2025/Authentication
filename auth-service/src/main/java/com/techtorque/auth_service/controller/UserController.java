@@ -11,6 +11,11 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +28,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/users")
 @CrossOrigin(origins = "*", maxAge = 3600)
 @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+@Tag(name = "User Management", description = "User management endpoints (Admin/Super Admin only)")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
   @Autowired
@@ -167,6 +174,16 @@ public class UserController {
    * Get current user's profile (user endpoint)
    * GET /api/v1/users/me
    */
+  @Operation(
+      summary = "Get Current User Profile",
+      description = "Get the profile information of the currently authenticated user. Available to all authenticated users.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "User profile retrieved successfully"),
+      @ApiResponse(responseCode = "401", description = "Authentication required"),
+      @ApiResponse(responseCode = "404", description = "User not found")
+  })
   @GetMapping("/me")
   @PreAuthorize("hasRole('CUSTOMER') or hasRole('EMPLOYEE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   public ResponseEntity<?> getCurrentUserProfile() {

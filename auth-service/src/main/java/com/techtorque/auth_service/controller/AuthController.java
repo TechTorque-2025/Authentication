@@ -15,6 +15,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.techtorque.auth_service.dto.ApiSuccess;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST Controller for authentication endpoints
@@ -23,6 +28,7 @@ import com.techtorque.auth_service.dto.ApiSuccess;
 @RestController
 @RequestMapping("/api/v1/auth")
 @CrossOrigin(origins = "*", maxAge = 3600)
+@Tag(name = "Authentication", description = "Authentication and user management endpoints")
 public class AuthController {
     
     @Autowired
@@ -38,6 +44,15 @@ public class AuthController {
      * @param loginRequest Login credentials
      * @return JWT token and user details
      */
+    @Operation(
+        summary = "User Login",
+        description = "Authenticate user with username/email and password. Returns JWT token on success. Rate limited to prevent brute force attacks."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Login successful, JWT token returned"),
+        @ApiResponse(responseCode = "401", description = "Invalid credentials or account locked"),
+        @ApiResponse(responseCode = "400", description = "Invalid request format")
+    })
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
         LoginResponse loginResponse = authService.authenticateUser(loginRequest, request);
@@ -61,6 +76,17 @@ public class AuthController {
      * @param createEmployeeRequest DTO with username, email, and password.
      * @return A success or error message.
      */
+    @Operation(
+        summary = "Create Employee Account",
+        description = "Create a new employee account. Requires ADMIN role.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Employee account created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request or username already exists"),
+        @ApiResponse(responseCode = "401", description = "Authentication required"),
+        @ApiResponse(responseCode = "403", description = "Admin role required")
+    })
     @PostMapping("/users/employee")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createEmployee(@Valid @RequestBody CreateEmployeeRequest createEmployeeRequest) {
