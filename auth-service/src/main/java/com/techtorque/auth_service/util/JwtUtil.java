@@ -15,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -123,7 +124,8 @@ public class JwtUtil {
    * Generates a SecretKey object from the Base64 encoded secret string.
    */
   private SecretKey getSignInKey() {
-    byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+    // Use the raw UTF-8 bytes of the secret string, just like the Go gateway.
+    byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
     return Keys.hmacShaKeyFor(keyBytes);
   }
 }
