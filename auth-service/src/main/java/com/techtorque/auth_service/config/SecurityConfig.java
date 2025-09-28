@@ -16,10 +16,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // The 'prePostEnabled = true' is the default and not needed
+@EnableMethodSecurity
 public class SecurityConfig {
 
   @Autowired
@@ -51,31 +56,74 @@ public class SecurityConfig {
     return authConfig.getAuthenticationManager();
   }
 
+  // NOTE: The WebSecurityCustomizer bean has been completely removed.
+
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
-            // 1. Disable CSRF and CORS using the new lambda style
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(AbstractHttpConfigurer::disable) // For production, you should configure this properly
-
-            // 2. Set up exception handling
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-
-            // 3. Set the session management to stateless
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-            // 4. Set up authorization rules
             .authorizeHttpRequests(auth -> auth
-                    // Be specific with your paths. Your controller is likely under /api/v1/auth
-                    .requestMatchers("/api/v1/auth/**").permitAll()
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                    .requestMatchers(
+                            // Public API endpoints
+                            "/api/v1/auth/**",  // Fixed: more specific auth path
+                            "/api/auth/**",     // Keep both for backward compatibility
+
+                            // Public controller endpoints
+                            "/favicon.ico",
+                            "/error",           // Add error page
+                            
+                            // Health check and actuator endpoints (if needed)
+                            "/actuator/**",
+
+                            // All OpenAPI and Swagger UI resources
+                            "/v3/api-docs/**",
+                            "/swagger-ui/**",
+                            "/swagger-ui.html",
+                            "/swagger-resources/**", // Include swagger-resources
+                            "/webjars/**",          // Include webjars
+                            "/api-docs/**"          // Additional swagger endpoint pattern
+                    ).permitAll()
+
+                    // All other requests require authentication.
                     .anyRequest().authenticated()
             );
 
-    // 5. Add your custom provider and filter
     http.authenticationProvider(authenticationProvider());
     http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
+  }
+
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    
+    // Allow specific origins
+    configuration.setAllowedOrigins(Arrays.asList(
+        "http://localhost:3000",  // Next.js dev server
+        "http://127.0.0.1:3000"   // Alternative localhost
+    ));
+    
+    // Allow all headers
+    configuration.setAllowedHeaders(Arrays.asList("*"));
+    
+    // Allow specific HTTP methods
+    configuration.setAllowedMethods(Arrays.asList(
+        "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
+    ));
+    
+    // Allow credentials (important for cookies/auth tokens)
+    configuration.setAllowCredentials(true);
+    
+    // Cache preflight response for 1 hour
+    configuration.setMaxAge(3600L);
+    
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    
+    return source;
   }
 }

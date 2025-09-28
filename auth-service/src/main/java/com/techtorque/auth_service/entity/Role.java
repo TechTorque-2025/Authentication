@@ -1,10 +1,7 @@
 package com.techtorque.auth_service.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*; // Import EqualsAndHashCode, Getter, Setter, ToString
 
 import java.util.Set;
 
@@ -14,35 +11,36 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "roles")
-@Data
+// --- Start of Changes ---
+@Getter
+@Setter
+@ToString(exclude = {"users", "permissions"}) // Exclude collections to prevent infinite loops
+@EqualsAndHashCode(exclude = {"users", "permissions"}) // Exclude collections from equals/hashCode
+// --- End of Changes ---
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Role {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    // Role name from the RoleName enum (ADMIN, EMPLOYEE, CUSTOMER)
-    @Column(unique = true, nullable = false)
-    @Enumerated(EnumType.STRING)
-    private RoleName name;
-    
-    // Human-readable description of the role
-    private String description;
-    
-    // Many-to-Many relationship with User - a role can be assigned to multiple users
-    @ManyToMany(mappedBy = "roles")
-    private Set<User> users;
-    
-    // Many-to-Many relationship with Permission - a role contains multiple permissions
-    // EAGER fetch ensures permissions are loaded when we load a role
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "role_permissions", // Junction table name
-        joinColumns = @JoinColumn(name = "role_id"), // Foreign key to role
-        inverseJoinColumns = @JoinColumn(name = "permission_id") // Foreign key to permission
-    )
-    private Set<Permission> permissions;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(unique = true, nullable = false)
+  @Enumerated(EnumType.STRING)
+  private RoleName name;
+
+  private String description;
+
+  // This is the lazy collection causing the LazyInitializationException
+  @ManyToMany(mappedBy = "roles")
+  private Set<User> users;
+
+  @ManyToMany(fetch = FetchType.EAGER)
+  @JoinTable(
+          name = "role_permissions",
+          joinColumns = @JoinColumn(name = "role_id"),
+          inverseJoinColumns = @JoinColumn(name = "permission_id")
+  )
+  private Set<Permission> permissions;
 }

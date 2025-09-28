@@ -1,41 +1,62 @@
 package com.techtorque.auth_service.controller;
 
+import com.techtorque.auth_service.dto.CreateEmployeeRequest;
+import com.techtorque.auth_service.dto.CreateAdminRequest;
 import com.techtorque.auth_service.dto.LoginRequest;
 import com.techtorque.auth_service.dto.LoginResponse;
 import com.techtorque.auth_service.dto.RegisterRequest;
 import com.techtorque.auth_service.service.AuthService;
+import com.techtorque.auth_service.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.techtorque.auth_service.dto.ApiSuccess;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST Controller for authentication endpoints
  * Handles login, registration, and health check requests
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @CrossOrigin(origins = "*", maxAge = 3600)
+@Tag(name = "Authentication", description = "Authentication and user management endpoints")
 public class AuthController {
     
     @Autowired
     private AuthService authService;
+    
+    // --- NEW DEPENDENCY ---
+    // We need UserService to call the createEmployee method
+    @Autowired
+    private UserService userService;
     
     /**
      * User login endpoint
      * @param loginRequest Login credentials
      * @return JWT token and user details
      */
+    @Operation(
+        summary = "User Login",
+        description = "Authenticate user with username/email and password. Returns JWT token on success. Rate limited to prevent brute force attacks."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Login successful, JWT token returned"),
+        @ApiResponse(responseCode = "401", description = "Invalid credentials or account locked"),
+        @ApiResponse(responseCode = "400", description = "Invalid request format")
+    })
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        try {
-            LoginResponse loginResponse = authService.authenticateUser(loginRequest);
-            return ResponseEntity.ok(loginResponse);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new MessageResponse("Error: " + e.getMessage()));
-        }
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+        LoginResponse loginResponse = authService.authenticateUser(loginRequest, request);
+        return ResponseEntity.ok(loginResponse);
     }
     
     /**
@@ -45,12 +66,64 @@ public class AuthController {
      */
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
+        String message = authService.registerUser(registerRequest);
+        return ResponseEntity.ok(ApiSuccess.of(message));
+    }
+    
+    // --- NEW ENDPOINT FOR CREATING EMPLOYEES ---
+    /**
+     * ADMIN-ONLY endpoint for creating a new employee account.
+     * @param createEmployeeRequest DTO with username, email, and password.
+     * @return A success or error message.
+     */
+    @Operation(
+        summary = "Create Employee Account",
+        description = "Create a new employee account. Requires ADMIN role.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Employee account created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request or username already exists"),
+        @ApiResponse(responseCode = "401", description = "Authentication required"),
+        @ApiResponse(responseCode = "403", description = "Admin role required")
+    })
+    @PostMapping("/users/employee")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> createEmployee(@Valid @RequestBody CreateEmployeeRequest createEmployeeRequest) {
         try {
-            String message = authService.registerUser(registerRequest);
-            return ResponseEntity.ok(new MessageResponse(message));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new MessageResponse("Error: " + e.getMessage()));
+            // Now we are calling the method that was previously unused
+            userService.createEmployee(
+                createEmployeeRequest.getUsername(),
+                createEmployeeRequest.getEmail(),
+                createEmployeeRequest.getPassword()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiSuccess.of("Employee account created successfully!"));
+        } catch (RuntimeException e) {
+            // Catches errors like "Username already exists"
+            return ResponseEntity.badRequest().body(ApiSuccess.of("Error: " + e.getMessage()));
+        }
+    }
+
+    // --- NEW ENDPOINT FOR CREATING ADMINS (SUPER_ADMIN ONLY) ---
+    /**
+     * SUPER_ADMIN-ONLY endpoint for creating a new admin account.
+     * @param createAdminRequest DTO with username, email, and password.
+     * @return A success or error message.
+     */
+    @PostMapping("/users/admin")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> createAdmin(@Valid @RequestBody CreateAdminRequest createAdminRequest) {
+        try {
+            userService.createAdmin(
+                createAdminRequest.getUsername(),
+                createAdminRequest.getEmail(),
+                createAdminRequest.getPassword()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiSuccess.of("Admin account created successfully!"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiSuccess.of("Error: " + e.getMessage()));
         }
     }
     
@@ -60,7 +133,7 @@ public class AuthController {
      */
     @GetMapping("/health")
     public ResponseEntity<?> health() {
-        return ResponseEntity.ok(new MessageResponse("Authentication Service is running!"));
+        return ResponseEntity.ok(ApiSuccess.of("Authentication Service is running!"));
     }
     
     /**
@@ -69,25 +142,7 @@ public class AuthController {
      */
     @GetMapping("/test")
     public ResponseEntity<?> test() {
-        return ResponseEntity.ok(new MessageResponse("Test endpoint accessible!"));
+        return ResponseEntity.ok(ApiSuccess.of("Test endpoint accessible!"));
     }
-    
-    /**
-     * Inner class for simple message responses
-     */
-    public static class MessageResponse {
-        private String message;
-        
-        public MessageResponse(String message) {
-            this.message = message;
-        }
-        
-        public String getMessage() {
-            return message;
-        }
-        
-        public void setMessage(String message) {
-            this.message = message;
-        }
-    }
+
 }
