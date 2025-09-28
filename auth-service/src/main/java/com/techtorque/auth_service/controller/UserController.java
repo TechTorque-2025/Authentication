@@ -25,8 +25,10 @@ import java.util.stream.Collectors;
  * Endpoints in this controller are accessible to users with ADMIN or SUPER_ADMIN roles.
  */
 @RestController
-@RequestMapping("/api/v1/users")
-@CrossOrigin(origins = "*", maxAge = 3600)
+// Class-level request mapping removed — endpoints are exposed as internal paths
+// @RequestMapping("/api/v1/users")
+// CORS handled by API Gateway; remove @CrossOrigin to avoid conflicts
+// @CrossOrigin(origins = "*", maxAge = 3600)
 @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
 @Tag(name = "User Management", description = "User management endpoints (Admin/Super Admin only)")
 @SecurityRequirement(name = "bearerAuth")

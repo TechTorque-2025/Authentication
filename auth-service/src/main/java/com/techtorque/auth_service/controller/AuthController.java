@@ -26,8 +26,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * Handles login, registration, and health check requests
  */
 @RestController
-@RequestMapping("/api/v1/auth")
-@CrossOrigin(origins = "*", maxAge = 3600)
+// Class-level request mapping removed — gateway strips prefixes before forwarding
+// @RequestMapping("/api/v1/auth")
+// CORS handled at the API Gateway; remove @CrossOrigin to avoid conflicts
+// @CrossOrigin(origins = "*", maxAge = 3600)
 @Tag(name = "Authentication", description = "Authentication and user management endpoints")
 public class AuthController {
     
