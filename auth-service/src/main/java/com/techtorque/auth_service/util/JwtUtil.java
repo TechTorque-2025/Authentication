@@ -121,7 +121,7 @@ public class JwtUtil {
   }
 
   /**
-   * Generates a SecretKey object from the Base64 encoded secret string.
+   * Generates a SecretKey object from the secret string.
    */
   private SecretKey getSignInKey() {
     // Use the raw UTF-8 bytes of the secret string, just like the Go gateway.
