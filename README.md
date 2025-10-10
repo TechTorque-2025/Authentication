@@ -1,5 +1,7 @@
 # 🔑 Authentication & User Management Service
 
+[![Build and Test Authentication Service](https://github.com/TechTorque-2025/Authentication/actions/workflows/buildtest.yaml/badge.svg)](https://github.com/TechTorque-2025/Authentication/actions/workflows/buildtest.yaml)
+
 This service is the authoritative source for user identity, authentication, and role management within the TechTorque 2025 ecosystem.
 
 **Assigned Team:** Randitha, Suweka
