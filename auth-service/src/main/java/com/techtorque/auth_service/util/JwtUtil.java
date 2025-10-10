@@ -1,4 +1,3 @@
-// In: /src/main/java/com/techtorque/auth_service/util/JwtUtil.java
 package com.techtorque.auth_service.util;
 
 import io.jsonwebtoken.Claims;
