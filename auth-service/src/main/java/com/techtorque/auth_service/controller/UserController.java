@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -25,8 +26,7 @@ import java.util.stream.Collectors;
  * Endpoints in this controller are accessible to users with ADMIN or SUPER_ADMIN roles.
  */
 @RestController
-// Class-level request mapping removed — endpoints are exposed as internal paths
-// @RequestMapping("/api/v1/users")
+@RequestMapping("/users")
 // CORS handled by API Gateway; remove @CrossOrigin to avoid conflicts
 // @CrossOrigin(origins = "*", maxAge = 3600)
 @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
@@ -43,7 +43,7 @@ public class UserController {
   @GetMapping
   public ResponseEntity<List<UserDto>> getAllUsers() {
     List<UserDto> users = userService.findAllUsers().stream()
-            .map(this::convertToDto)
+            .map(this::convertToDtoSimple)
             .collect(Collectors.toList());
     return ResponseEntity.ok(users);
   }
@@ -229,8 +229,8 @@ public class UserController {
     }
   }
 
-  // Helper method to convert User entity to a safe UserDto
-  private UserDto convertToDto(User user) {
+  // Helper method to convert User entity to a simple UserDto (without permissions to avoid N+1 query)
+  private UserDto convertToDtoSimple(User user) {
     return UserDto.builder()
             .id(user.getId())
             .username(user.getUsername())
@@ -238,7 +238,33 @@ public class UserController {
             .enabled(user.getEnabled())
             .createdAt(user.getCreatedAt())
             .roles(userService.getUserRoles(user.getUsername()))
-            .permissions(userService.getUserPermissions(user.getUsername()))
+            .permissions(Set.of()) // Skip permissions for list to avoid N+1 query
             .build();
+  }
+
+  // Helper method to convert User entity to a safe UserDto (with permissions)
+  private UserDto convertToDto(User user) {
+    try {
+      return UserDto.builder()
+              .id(user.getId())
+              .username(user.getUsername())
+              .email(user.getEmail())
+              .enabled(user.getEnabled())
+              .createdAt(user.getCreatedAt())
+              .roles(userService.getUserRoles(user.getUsername()))
+              .permissions(userService.getUserPermissions(user.getUsername()))
+              .build();
+    } catch (Exception e) {
+      // If permission loading fails, return user with roles only
+      return UserDto.builder()
+              .id(user.getId())
+              .username(user.getUsername())
+              .email(user.getEmail())
+              .enabled(user.getEnabled())
+              .createdAt(user.getCreatedAt())
+              .roles(userService.getUserRoles(user.getUsername()))
+              .permissions(Set.of())
+              .build();
+    }
   }
 }

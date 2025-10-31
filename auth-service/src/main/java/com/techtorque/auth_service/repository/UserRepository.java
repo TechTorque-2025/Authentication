@@ -50,4 +50,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.username = :username")
     Optional<User> findByUsernameWithRoles(@Param("username") String username);
+
+    /**
+     * Find user with roles and permissions by username (full eager fetch)
+     * @param username the username to search for
+     * @return Optional containing user with roles and permissions if found
+     */
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles r LEFT JOIN FETCH r.permissions WHERE u.username = :username")
+    Optional<User> findByUsernameWithRolesAndPermissions(@Param("username") String username);
+
+    /**
+     * Find all users with roles eagerly fetched (prevents N+1 query problem)
+     * @return List of all users with roles
+     */
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles")
+    java.util.List<User> findAllWithRoles();
 }

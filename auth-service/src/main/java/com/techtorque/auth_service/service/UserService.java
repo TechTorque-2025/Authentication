@@ -205,12 +205,12 @@ public class UserService implements UserDetailsService {
     }
 
     /**
-     * Find user by username
+     * Find user by username with roles and permissions eagerly loaded
      * @param username Username to search for
      * @return Optional containing user if found
      */
     public Optional<User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
+        return userRepository.findByUsernameWithRolesAndPermissions(username);
     }
 
     /**
@@ -224,21 +224,23 @@ public class UserService implements UserDetailsService {
 
     /**
      * Get all users in the system (admin only)
-     * @return List of all users
+     * Uses eager fetching to prevent N+1 query problem
+     * @return List of all users with roles
      */
     public List<User> findAllUsers() {
-        return userRepository.findAll();
+        return userRepository.findAllWithRoles();
     }
 
     /**
      * Get all permissions for a user (from all their roles)
+     * Uses eager fetching to prevent N+1 queries
      * @param username Username to get permissions for
      * @return Set of permission names
      */
     public Set<String> getUserPermissions(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRolesAndPermissions(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
-        
+
         return user.getRoles().stream()
                 .flatMap(role -> role.getPermissions().stream())
                 .map(permission -> permission.getName())
@@ -247,13 +249,14 @@ public class UserService implements UserDetailsService {
 
     /**
      * Get all roles for a user
+     * Uses eager fetching to prevent N+1 queries
      * @param username Username to get roles for
      * @return Set of role names
      */
     public Set<String> getUserRoles(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRoles(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
-        
+
         return user.getRoles().stream()
                 .map(role -> role.getName().name())
                 .collect(Collectors.toSet());
@@ -264,7 +267,7 @@ public class UserService implements UserDetailsService {
      * @param username Username to enable
      */
     public void enableUser(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRoles(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         user.setEnabled(true);
         userRepository.save(user);
@@ -275,7 +278,7 @@ public class UserService implements UserDetailsService {
      * @param username Username to disable
      */
     public void disableUser(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRoles(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         user.setEnabled(false);
         userRepository.save(user);
@@ -287,7 +290,7 @@ public class UserService implements UserDetailsService {
      * @throws RuntimeException if user not found
      */
     public void deleteUser(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRoles(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         userRepository.delete(user);
     }
@@ -313,9 +316,9 @@ public class UserService implements UserDetailsService {
      * @return true if user has the role
      */
     public boolean hasRole(String username, RoleName roleName) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRoles(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
-        
+
         return user.getRoles().stream()
                 .anyMatch(role -> role.getName().equals(roleName));
     }
@@ -327,9 +330,9 @@ public class UserService implements UserDetailsService {
      * @return true if user has the permission through any of their roles
      */
     public boolean hasPermission(String username, String permissionName) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRolesAndPermissions(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
-        
+
         return user.getRoles().stream()
                 .flatMap(role -> role.getPermissions().stream())
                 .anyMatch(permission -> permission.getName().equals(permissionName));
@@ -345,7 +348,7 @@ public class UserService implements UserDetailsService {
      * @throws RuntimeException if user not found or new values already exist
      */
     public User updateUserDetails(String username, String newUsername, String newEmail, Boolean enabled) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRoles(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         // Check if new username is provided and different
@@ -379,9 +382,9 @@ public class UserService implements UserDetailsService {
      * @throws RuntimeException if user not found
      */
     public void resetUserPassword(String username, String newPassword) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRoles(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
-        
+
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
@@ -394,14 +397,14 @@ public class UserService implements UserDetailsService {
      * @throws RuntimeException if user not found or current password is incorrect
      */
     public void changeUserPassword(String username, String currentPassword, String newPassword) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRoles(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
-        
+
         // Verify current password
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new IllegalStateException("Current password is incorrect");
         }
-        
+
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
@@ -413,7 +416,7 @@ public class UserService implements UserDetailsService {
      * @throws RuntimeException if user or role not found, or role already assigned
      */
     public void assignRoleToUser(String username, String roleName) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRoles(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         RoleName roleNameEnum;
@@ -455,7 +458,7 @@ public class UserService implements UserDetailsService {
      * @throws RuntimeException if user or role not found, or role not assigned
      */
     public void revokeRoleFromUser(String username, String roleName) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameWithRoles(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
         
         RoleName roleNameEnum;

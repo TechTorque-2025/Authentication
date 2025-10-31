@@ -33,6 +33,9 @@ public class SecurityConfig {
   @Autowired
   private AuthEntryPointJwt unauthorizedHandler;
 
+  @Autowired
+  private GatewayHeaderFilter gatewayHeaderFilter;
+
   @Bean
   public AuthTokenFilter authenticationJwtTokenFilter() {
     return new AuthTokenFilter();
@@ -91,6 +94,7 @@ public class SecurityConfig {
             );
 
     http.authenticationProvider(authenticationProvider());
+    http.addFilterBefore(gatewayHeaderFilter, UsernamePasswordAuthenticationFilter.class);
     http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
