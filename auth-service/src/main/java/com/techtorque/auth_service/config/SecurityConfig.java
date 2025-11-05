@@ -39,6 +39,11 @@ public class SecurityConfig {
   }
 
   @Bean
+  public GatewayHeaderFilter gatewayHeaderFilter() {
+    return new GatewayHeaderFilter();
+  }
+
+  @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
@@ -91,6 +96,11 @@ public class SecurityConfig {
             );
 
     http.authenticationProvider(authenticationProvider());
+    
+    // Add filters in the correct order:
+    // 1. GatewayHeaderFilter - processes X-User-Subject/X-User-Roles from Gateway
+    // 2. AuthTokenFilter - processes JWT Bearer tokens
+    http.addFilterBefore(gatewayHeaderFilter(), UsernamePasswordAuthenticationFilter.class);
     http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

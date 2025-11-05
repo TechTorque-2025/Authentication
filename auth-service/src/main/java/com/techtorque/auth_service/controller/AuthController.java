@@ -68,13 +68,13 @@ public class AuthController {
         description = "Register a new customer account. Email verification is required before login."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Registration successful, verification email sent"),
+        @ApiResponse(responseCode = "201", description = "Registration successful, verification email sent"),
         @ApiResponse(responseCode = "400", description = "Invalid request or username/email already exists")
     })
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         String message = authService.registerUser(registerRequest);
-        return ResponseEntity.ok(ApiSuccess.of(message));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiSuccess.of(message));
     }
     
     /**
