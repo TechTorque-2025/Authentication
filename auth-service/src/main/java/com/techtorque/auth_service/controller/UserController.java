@@ -1,6 +1,7 @@
 package com.techtorque.auth_service.controller;
 
-import com.techtorque.auth_service.dto.*;
+import com.techtorque.auth_service.dto.request.*;
+import com.techtorque.auth_service.dto.response.*;
 import com.techtorque.auth_service.entity.User;
 import com.techtorque.auth_service.service.UserService;
 import jakarta.validation.Valid;
@@ -36,6 +37,9 @@ public class UserController {
 
   @Autowired
   private UserService userService;
+
+  @Autowired
+  private com.techtorque.auth_service.service.PreferencesService preferencesService;
 
   /**
    * Get a list of all users in the system.
@@ -229,8 +233,153 @@ public class UserController {
     }
   }
 
+  /**
+   * Update current user's profile
+   * PUT /users/profile
+   */
+  @Operation(
+      summary = "Update User Profile",
+      description = "Update profile information for the currently authenticated user",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Profile updated successfully"),
+      @ApiResponse(responseCode = "401", description = "Authentication required"),
+      @ApiResponse(responseCode = "400", description = "Invalid request data")
+  })
+  @PutMapping("/profile")
+  @PreAuthorize("hasRole('CUSTOMER') or hasRole('EMPLOYEE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  public ResponseEntity<?> updateProfile(@Valid @RequestBody UpdateProfileRequest updateRequest) {
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      String username = authentication.getName();
+      
+      com.techtorque.auth_service.entity.User updatedUser = userService.updateProfile(
+          username,
+          updateRequest.getFullName(),
+          updateRequest.getPhone(),
+          updateRequest.getAddress()
+      );
+      
+      return ResponseEntity.ok(convertToDto(updatedUser));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest()
+              .body(ApiError.builder()
+                      .status(400)
+                      .message("Error: " + e.getMessage())
+                      .timestamp(java.time.LocalDateTime.now())
+                      .build());
+    }
+  }
+
+  /**
+   * Upload profile photo
+   * POST /users/profile/photo
+   */
+  @Operation(
+      summary = "Upload Profile Photo",
+      description = "Upload or update profile photo. For now, accepts a URL. In production, this would handle file uploads.",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Photo uploaded successfully"),
+      @ApiResponse(responseCode = "401", description = "Authentication required")
+  })
+  @PostMapping("/profile/photo")
+  @PreAuthorize("hasRole('CUSTOMER') or hasRole('EMPLOYEE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  public ResponseEntity<?> uploadProfilePhoto(@RequestBody java.util.Map<String, String> request) {
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      String username = authentication.getName();
+      
+      String photoUrl = request.get("photoUrl");
+      if (photoUrl == null || photoUrl.isEmpty()) {
+        return ResponseEntity.badRequest()
+                .body(ApiError.builder()
+                        .status(400)
+                        .message("Error: photoUrl is required")
+                        .timestamp(java.time.LocalDateTime.now())
+                        .build());
+      }
+      
+      userService.updateProfilePhoto(username, photoUrl);
+      return ResponseEntity.ok(ApiSuccess.of("Profile photo updated successfully"));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest()
+              .body(ApiError.builder()
+                      .status(400)
+                      .message("Error: " + e.getMessage())
+                      .timestamp(java.time.LocalDateTime.now())
+                      .build());
+    }
+  }
+
+  /**
+   * Get user preferences
+   * GET /users/preferences
+   */
+  @Operation(
+      summary = "Get User Preferences",
+      description = "Get preferences for the currently authenticated user",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Preferences retrieved successfully"),
+      @ApiResponse(responseCode = "401", description = "Authentication required")
+  })
+  @GetMapping("/preferences")
+  @PreAuthorize("hasRole('CUSTOMER') or hasRole('EMPLOYEE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  public ResponseEntity<?> getUserPreferences() {
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      String username = authentication.getName();
+      
+      UserPreferencesDto preferences = preferencesService.getUserPreferences(username);
+      return ResponseEntity.ok(preferences);
+    } catch (Exception e) {
+      return ResponseEntity.badRequest()
+              .body(ApiError.builder()
+                      .status(400)
+                      .message("Error: " + e.getMessage())
+                      .timestamp(java.time.LocalDateTime.now())
+                      .build());
+    }
+  }
+
+  /**
+   * Update user preferences
+   * PUT /users/preferences
+   */
+  @Operation(
+      summary = "Update User Preferences",
+      description = "Update preferences for the currently authenticated user",
+      security = @SecurityRequirement(name = "bearerAuth")
+  )
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Preferences updated successfully"),
+      @ApiResponse(responseCode = "401", description = "Authentication required")
+  })
+  @PutMapping("/preferences")
+  @PreAuthorize("hasRole('CUSTOMER') or hasRole('EMPLOYEE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+  public ResponseEntity<?> updateUserPreferences(@Valid @RequestBody UserPreferencesDto preferencesDto) {
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      String username = authentication.getName();
+      
+      UserPreferencesDto updated = preferencesService.updateUserPreferences(username, preferencesDto);
+      return ResponseEntity.ok(updated);
+    } catch (Exception e) {
+      return ResponseEntity.badRequest()
+              .body(ApiError.builder()
+                      .status(400)
+                      .message("Error: " + e.getMessage())
+                      .timestamp(java.time.LocalDateTime.now())
+                      .build());
+    }
+  }
+
   // Helper method to convert User entity to a safe UserDto
-  private UserDto convertToDto(User user) {
+  private UserDto convertToDto(com.techtorque.auth_service.entity.User user) {
     return UserDto.builder()
             .id(user.getId())
             .username(user.getUsername())
