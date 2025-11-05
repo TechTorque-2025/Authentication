@@ -1,4 +1,4 @@
-package com.techtorque.auth_service.dto;
+package com.techtorque.auth_service.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.techtorque.auth_service.dto;
+package com.techtorque.auth_service.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
