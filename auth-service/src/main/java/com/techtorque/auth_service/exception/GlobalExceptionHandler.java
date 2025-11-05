@@ -1,7 +1,7 @@
 package com.techtorque.auth_service.exception;
 
 import com.techtorque.auth_service.controller.AuthController;
-import com.techtorque.auth_service.dto.ApiError;
+import com.techtorque.auth_service.dto.response.ApiError;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
