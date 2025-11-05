@@ -488,4 +488,35 @@ public class UserService implements UserDetailsService {
         user.getRoles().remove(role);
         userRepository.save(user);
     }
+    
+    /**
+     * Update user profile
+     */
+    public User updateProfile(String username, String fullName, String phone, String address) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+        
+        if (fullName != null) {
+            user.setFullName(fullName);
+        }
+        if (phone != null) {
+            user.setPhone(phone);
+        }
+        if (address != null) {
+            user.setAddress(address);
+        }
+        
+        return userRepository.save(user);
+    }
+    
+    /**
+     * Update profile photo URL
+     */
+    public User updateProfilePhoto(String username, String photoUrl) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+        
+        user.setProfilePhotoUrl(photoUrl);
+        return userRepository.save(user);
+    }
 }
