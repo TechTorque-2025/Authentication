@@ -37,6 +37,18 @@ public class User {
   @Column(unique = true, nullable = false)
   private String email;
 
+  @Column
+  private String fullName;
+
+  @Column
+  private String phone;
+
+  @Column(length = 500)
+  private String address;
+
+  @Column
+  private String profilePhotoUrl;
+
   @Column(nullable = false)
   @Builder.Default
   private Boolean enabled = true;
