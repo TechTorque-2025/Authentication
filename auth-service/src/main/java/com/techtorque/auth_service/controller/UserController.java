@@ -112,7 +112,7 @@ public class UserController {
    * PUT /api/v1/users/{username}
    */
   @PutMapping("/{username}")
-  public ResponseEntity<?> updateUser(@PathVariable String username, 
+  public ResponseEntity<?> updateUser(@PathVariable String username,
                                      @Valid @RequestBody UpdateUserRequest updateRequest) {
     try {
       User updatedUser = userService.updateUserDetails(
@@ -122,6 +122,9 @@ public class UserController {
           updateRequest.getEnabled()
       );
       return ResponseEntity.ok(convertToDto(updatedUser));
+    } catch (IllegalArgumentException e) {
+      // Re-throw IllegalArgumentException to preserve exception type for GlobalExceptionHandler
+      throw e;
     } catch (RuntimeException e) {
       throw new RuntimeException(e.getMessage());
     }
@@ -137,6 +140,20 @@ public class UserController {
     try {
       userService.resetUserPassword(username, resetRequest.getNewPassword());
       return ResponseEntity.ok(ApiSuccess.of("Password reset successfully for user: " + username));
+    } catch (RuntimeException e) {
+      throw new RuntimeException(e.getMessage());
+    }
+  }
+
+  /**
+   * Get user's roles
+   * GET /api/v1/users/{username}/roles
+   */
+  @GetMapping("/{username}/roles")
+  public ResponseEntity<?> getUserRoles(@PathVariable String username) {
+    try {
+      Set<String> roles = userService.getUserRoles(username);
+      return ResponseEntity.ok(roles);
     } catch (RuntimeException e) {
       throw new RuntimeException(e.getMessage());
     }
@@ -167,6 +184,21 @@ public class UserController {
                       .message("Error: " + ade.getMessage())
                       .timestamp(java.time.LocalDateTime.now())
                       .build());
+    } catch (RuntimeException e) {
+      throw new RuntimeException(e.getMessage());
+    }
+  }
+
+  /**
+   * Remove a specific role from a user (admin only)
+   * DELETE /api/v1/users/{username}/roles/{roleName}
+   */
+  @DeleteMapping("/{username}/roles/{roleName}")
+  public ResponseEntity<?> removeUserRole(@PathVariable String username, @PathVariable String roleName) {
+    try {
+      userService.revokeRoleFromUser(username, roleName);
+      return ResponseEntity.ok(ApiSuccess.of(
+          "Role '" + roleName + "' removed from user: " + username));
     } catch (RuntimeException e) {
       throw new RuntimeException(e.getMessage());
     }

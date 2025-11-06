@@ -113,6 +113,48 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle duplicate user exceptions (username or email already exists)
+     */
+    @ExceptionHandler(DuplicateUserException.class)
+    public ResponseEntity<?> handleDuplicateUserException(DuplicateUserException ex) {
+        logger.warn("Duplicate user error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiError.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .message(ex.getMessage())
+                .timestamp(java.time.LocalDateTime.now())
+                .build());
+    }
+
+    /**
+     * Handle entity not found exceptions (JPA)
+     */
+    @ExceptionHandler(jakarta.persistence.EntityNotFoundException.class)
+    public ResponseEntity<?> handleEntityNotFoundException(jakarta.persistence.EntityNotFoundException ex) {
+        logger.warn("Entity not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiError.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .message(ex.getMessage())
+                .timestamp(java.time.LocalDateTime.now())
+                .build());
+    }
+
+    /**
+     * Handle illegal argument exceptions (invalid input)
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
+        logger.warn("Illegal argument: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiError.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .message(ex.getMessage())
+                .timestamp(java.time.LocalDateTime.now())
+                .build());
+    }
+
+    /**
      * Handle runtime exceptions (business logic errors)
      */
     @ExceptionHandler(RuntimeException.class)

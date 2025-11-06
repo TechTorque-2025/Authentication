@@ -359,12 +359,19 @@ public class UserService implements UserDetailsService {
             user.setUsername(newUsername);
         }
         
-        // Check if new email is provided and different
-        if (newEmail != null && !newEmail.equals(user.getEmail())) {
-            if (userRepository.existsByEmail(newEmail)) {
-                throw new IllegalArgumentException("Email already exists: " + newEmail);
+        // Check if new email is provided
+        if (newEmail != null) {
+            // Validate email is not empty
+            if (newEmail.trim().isEmpty()) {
+                throw new IllegalArgumentException("Email cannot be empty");
             }
-            user.setEmail(newEmail);
+            // Only update if different from current
+            if (!newEmail.equals(user.getEmail())) {
+                if (userRepository.existsByEmail(newEmail)) {
+                    throw new IllegalArgumentException("Email already exists: " + newEmail);
+                }
+                user.setEmail(newEmail);
+            }
         }
         
         // Update enabled status if provided
@@ -402,7 +409,12 @@ public class UserService implements UserDetailsService {
 
         // Verify current password
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-            throw new IllegalStateException("Current password is incorrect");
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        // Check if new password is same as old password
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException("New password must be different from current password");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));

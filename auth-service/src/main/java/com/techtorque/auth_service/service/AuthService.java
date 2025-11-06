@@ -152,11 +152,11 @@ public class AuthService {
     
     public String registerUser(RegisterRequest registerRequest) {
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            throw new RuntimeException("Error: Username is already taken!");
+            throw new com.techtorque.auth_service.exception.DuplicateUserException("Username already exists");
         }
-        
+
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new RuntimeException("Error: Email is already in use!");
+            throw new com.techtorque.auth_service.exception.DuplicateUserException("Email already exists");
         }
         
         User user = User.builder()
