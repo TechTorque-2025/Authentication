@@ -237,7 +237,7 @@ public class AuthService {
         List<String> roles = user.getRoles().stream()
                 .map(role -> role.getName().name())
                 .collect(Collectors.toList());
-        
+
         String jwt = jwtUtil.generateJwtToken(new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
@@ -288,11 +288,11 @@ public class AuthService {
         com.techtorque.auth_service.entity.RefreshToken refreshToken = tokenService.validateRefreshToken(refreshTokenString);
         
         User user = refreshToken.getUser();
-        
+
         List<String> roles = user.getRoles().stream()
                 .map(role -> role.getName().name())
                 .collect(Collectors.toList());
-        
+
         String jwt = jwtUtil.generateJwtToken(new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
