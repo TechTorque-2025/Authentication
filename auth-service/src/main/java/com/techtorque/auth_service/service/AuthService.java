@@ -163,18 +163,17 @@ public class AuthService {
     }
     
     public String registerUser(RegisterRequest registerRequest) {
-        if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            throw new RuntimeException("Error: Username is already taken!");
-        }
-        
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
             throw new RuntimeException("Error: Email is already in use!");
         }
         
         User user = User.builder()
-                .username(registerRequest.getUsername())
+                .username(registerRequest.getEmail()) // Use email as username for simplicity
                 .email(registerRequest.getEmail())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
+                .fullName(registerRequest.getFullName())
+                .phone(registerRequest.getPhone())
+                .address(registerRequest.getAddress())
                 .enabled(false) // Require email verification
                 .roles(new HashSet<>())
                 .build();
@@ -226,40 +225,44 @@ public class AuthService {
         
         User user = verificationToken.getUser();
         user.setEnabled(true);
-        userRepository.save(user);
-        
+        User updatedUser = userRepository.save(user);
+
         tokenService.markTokenAsUsed(verificationToken);
         
         // Send welcome email
-        emailService.sendWelcomeEmail(user.getEmail(), user.getUsername());
-        
+        emailService.sendWelcomeEmail(updatedUser.getEmail(), updatedUser.getUsername());
+
         // Auto-login after verification
-        List<String> roles = user.getRoles().stream()
+        Set<String> roleNames = updatedUser.getRoles() != null ?
+            updatedUser.getRoles().stream()
                 .map(role -> role.getName().name())
-                .collect(Collectors.toList());
-        
+                .collect(Collectors.toSet()) :
+            Set.of("CUSTOMER");
+
+        List<String> roles = new java.util.ArrayList<>(roleNames);
+
+        Set<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities = new java.util.HashSet<>();
+        if (updatedUser.getRoles() != null) {
+            updatedUser.getRoles().stream()
+                .flatMap(role -> role.getPermissions() != null ? role.getPermissions().stream() : java.util.stream.Stream.empty())
+                .forEach(permission -> authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(permission.getName())));
+        }
+
         String jwt = jwtUtil.generateJwtToken(new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPassword(),
-                user.getRoles().stream()
-                        .flatMap(role -> role.getPermissions().stream())
-                        .map(permission -> new org.springframework.security.core.authority.SimpleGrantedAuthority(permission.getName()))
-                        .collect(Collectors.toSet())
+                updatedUser.getUsername(),
+                updatedUser.getPassword(),
+                authorities
         ), roles);
         
         String ip = request != null ? (request.getHeader("X-Forwarded-For") == null ? request.getRemoteAddr() : request.getHeader("X-Forwarded-For")) : null;
         String ua = request != null ? request.getHeader("User-Agent") : null;
-        String refreshToken = tokenService.createRefreshToken(user, ip, ua);
-        
-        Set<String> roleNames = user.getRoles().stream()
-                .map(role -> role.getName().name())
-                .collect(Collectors.toSet());
-        
+        String refreshToken = tokenService.createRefreshToken(updatedUser, ip, ua);
+
         return LoginResponse.builder()
                 .token(jwt)
                 .refreshToken(refreshToken)
-                .username(user.getUsername())
-                .email(user.getEmail())
+                .username(updatedUser.getUsername())
+                .email(updatedUser.getEmail())
                 .roles(roleNames)
                 .build();
     }
