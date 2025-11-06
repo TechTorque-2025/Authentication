@@ -53,6 +53,13 @@ public class User {
   @Builder.Default
   private Boolean enabled = true;
 
+  @Column(nullable = false)
+  @Builder.Default
+  private Boolean emailVerified = false;
+
+  @Column(name = "email_verification_deadline")
+  private LocalDateTime emailVerificationDeadline;
+
   @Column(name = "created_at")
   @Builder.Default
   private LocalDateTime createdAt = LocalDateTime.now();
@@ -74,6 +81,7 @@ public class User {
     this.enabled = true;
     this.createdAt = LocalDateTime.now();
     this.roles = new HashSet<>();
+    this.emailVerified = false;
   }
 
   public void addRole(Role role) {

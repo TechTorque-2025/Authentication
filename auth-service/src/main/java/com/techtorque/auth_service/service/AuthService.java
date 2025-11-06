@@ -174,7 +174,9 @@ public class AuthService {
                 .fullName(registerRequest.getFullName())
                 .phone(registerRequest.getPhone())
                 .address(registerRequest.getAddress())
-                .enabled(false) // Require email verification
+                .enabled(true) // Allow login without email verification
+                .emailVerified(false) // Track verification status separately
+                .emailVerificationDeadline(LocalDateTime.now().plus(7, ChronoUnit.DAYS)) // 1 week deadline
                 .roles(new HashSet<>())
                 .build();
         
@@ -225,6 +227,7 @@ public class AuthService {
         
         User user = verificationToken.getUser();
         user.setEnabled(true);
+        user.setEmailVerified(true); // Mark email as verified
         User updatedUser = userRepository.save(user);
 
         tokenService.markTokenAsUsed(verificationToken);
@@ -274,7 +277,7 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
         
-        if (user.getEnabled()) {
+        if (user.getEmailVerified()) {
             throw new RuntimeException("Email is already verified");
         }
         
