@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface LoginLockRepository extends JpaRepository<LoginLock, Long> {
     Optional<LoginLock> findByUsername(String username);
+    void deleteByUsername(String username);
 }

@@ -77,8 +77,13 @@ public class SecurityConfig {
           // Permit the paths AS SEEN BY THE JAVA SERVICE after the gateway strips the prefixes.
           "/login",
           "/register",
+          "/verify-email",
+          "/resend-verification",
+          "/forgot-password",
+          "/reset-password",
           "/health",
-                            
+          "/test",
+
           // Backwards-compatible patterns (if any clients bypass the gateway)
           "/api/v1/auth/**",
           "/api/auth/**",

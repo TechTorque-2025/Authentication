@@ -6,6 +6,9 @@ import com.techtorque.auth_service.entity.User;
 import com.techtorque.auth_service.repository.RoleRepository;
 import com.techtorque.auth_service.repository.LoginLockRepository;
 import com.techtorque.auth_service.repository.UserRepository;
+import com.techtorque.auth_service.repository.RefreshTokenRepository;
+import com.techtorque.auth_service.repository.VerificationTokenRepository;
+import com.techtorque.auth_service.repository.LoginLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.GrantedAuthority;
@@ -38,11 +41,20 @@ public class UserService implements UserDetailsService {
         private final RoleRepository roleRepository;
         private final PasswordEncoder passwordEncoder;
         private final LoginLockRepository loginLockRepository;
-        public UserService(UserRepository userRepository, RoleRepository roleRepository, @Lazy PasswordEncoder passwordEncoder, LoginLockRepository loginLockRepository) {
+        private final RefreshTokenRepository refreshTokenRepository;
+        private final VerificationTokenRepository verificationTokenRepository;
+        private final LoginLogRepository loginLogRepository;
+
+        public UserService(UserRepository userRepository, RoleRepository roleRepository, @Lazy PasswordEncoder passwordEncoder,
+                          LoginLockRepository loginLockRepository, RefreshTokenRepository refreshTokenRepository,
+                          VerificationTokenRepository verificationTokenRepository, LoginLogRepository loginLogRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.loginLockRepository = loginLockRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.verificationTokenRepository = verificationTokenRepository;
+        this.loginLogRepository = loginLogRepository;
     }
 
     /**
@@ -289,6 +301,26 @@ public class UserService implements UserDetailsService {
     public void deleteUser(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+
+        // Clear all related records before deleting the user to avoid foreign key constraint issues
+
+        // Clear roles
+        user.getRoles().clear();
+        userRepository.save(user);
+
+        // Delete related refresh tokens
+        refreshTokenRepository.deleteByUser(user);
+
+        // Delete related verification tokens
+        verificationTokenRepository.deleteByUser(user);
+
+        // Delete related login locks
+        loginLockRepository.deleteByUsername(username);
+
+        // Delete related login logs
+        loginLogRepository.deleteByUsername(username);
+
+        // Finally, delete the user
         userRepository.delete(user);
     }
 
