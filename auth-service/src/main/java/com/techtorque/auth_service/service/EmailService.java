@@ -73,8 +73,8 @@ public class EmailService {
         }
         
         try {
-            String resetUrl = frontendUrl + "/reset-password?token=" + token;
-            
+            String resetUrl = frontendUrl + "/auth/reset-password?token=" + token;
+
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
