@@ -1,6 +1,6 @@
 # .github/workflows/build.yml
 # This workflow builds the JAR, then packages it as a Docker image.
-
+name: Build and Package Service
 on:
   push:
     branches:
