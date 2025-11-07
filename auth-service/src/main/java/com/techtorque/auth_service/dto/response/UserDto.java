@@ -1,4 +1,4 @@
-package com.techtorque.auth_service.dto;
+package com.techtorque.auth_service.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +21,12 @@ public class UserDto {
     private Long id;
     private String username;
     private String email;
+    private String fullName;
+    private String phone;
+    private String address;
+    private String profilePhoto;
     private Boolean enabled;
+    private Boolean emailVerified;
     private LocalDateTime createdAt;
     private Set<String> roles; // Role names as strings
     private Set<String> permissions; // Permission names as strings

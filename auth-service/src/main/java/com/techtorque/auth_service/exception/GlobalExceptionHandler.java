@@ -1,7 +1,7 @@
 package com.techtorque.auth_service.exception;
 
 import com.techtorque.auth_service.controller.AuthController;
-import com.techtorque.auth_service.dto.ApiError;
+import com.techtorque.auth_service.dto.response.ApiError;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -124,6 +124,8 @@ public class GlobalExceptionHandler {
         if (message != null && (
             message.contains("not found") ||
             message.contains("already exists") ||
+            message.contains("already taken") ||
+            message.contains("already in use") ||
             message.contains("incorrect") ||
             message.contains("Invalid") ||
             message.contains("does not have") ||

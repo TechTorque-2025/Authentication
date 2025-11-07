@@ -1,4 +1,4 @@
-package com.techtorque.auth_service.dto;
+package com.techtorque.auth_service.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -17,10 +17,9 @@ import java.util.Set;
 @AllArgsConstructor
 public class RegisterRequest {
     
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
-    private String username;
-    
+    @NotBlank(message = "Full name is required")
+    private String fullName;
+
     @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
     private String email;
@@ -29,6 +28,10 @@ public class RegisterRequest {
     @Size(min = 6, max = 40, message = "Password must be between 6 and 40 characters")
     private String password;
     
+    private String phone;
+
+    private String address;
+
     // Set of role names to assign to the user (optional)
     private Set<String> roles;
 }

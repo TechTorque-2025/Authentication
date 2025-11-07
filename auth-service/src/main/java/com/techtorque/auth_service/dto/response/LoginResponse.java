@@ -1,4 +1,4 @@
-package com.techtorque.auth_service.dto;
+package com.techtorque.auth_service.dto.response;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,6 +14,7 @@ import java.util.Set;
 public class LoginResponse {
     
     private String token;
+    private String refreshToken;
     private String type = "Bearer";
     private String username;
     private String email;

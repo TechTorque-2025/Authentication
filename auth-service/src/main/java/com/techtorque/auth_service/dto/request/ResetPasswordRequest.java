@@ -1,4 +1,4 @@
-package com.techtorque.auth_service.dto;
+package com.techtorque.auth_service.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -8,17 +8,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Data Transfer Object for changing user's own password
- * Used for POST /api/v1/users/me/change-password endpoint
+ * Data Transfer Object for admin password reset
+ * Used for POST /api/v1/users/{username}/reset-password endpoint
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ChangePasswordRequest {
-    
-    @NotBlank(message = "Current password is required")
-    private String currentPassword;
+public class ResetPasswordRequest {
     
     @NotBlank(message = "New password is required")
     @Size(min = 6, max = 100, message = "New password must be between 6 and 100 characters")
