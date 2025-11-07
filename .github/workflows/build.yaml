@@ -59,7 +59,7 @@ jobs:
     name: Build & Push Docker Image
     # This job only runs on pushes to 'main', not on PRs
     # Ensures you only publish final images for merged code
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/devOps'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/devOps' || github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     # This job runs *after* the build-test job succeeds
     needs: build-test 
