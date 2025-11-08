@@ -239,6 +239,7 @@ public class AuthService {
         Set<String> roleNames = updatedUser.getRoles() != null ?
             updatedUser.getRoles().stream()
                 .map(role -> role.getName().name())
+                .collect(Collectors.toList());
                 .collect(Collectors.toSet()) :
             Set.of("CUSTOMER");
 
@@ -294,11 +295,11 @@ public class AuthService {
         com.techtorque.auth_service.entity.RefreshToken refreshToken = tokenService.validateRefreshToken(refreshTokenString);
         
         User user = refreshToken.getUser();
-        
+
         List<String> roles = user.getRoles().stream()
                 .map(role -> role.getName().name())
                 .collect(Collectors.toList());
-        
+
         String jwt = jwtUtil.generateJwtToken(new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
