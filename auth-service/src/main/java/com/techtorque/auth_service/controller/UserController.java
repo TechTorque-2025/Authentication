@@ -383,10 +383,16 @@ public class UserController {
             .id(user.getId())
             .username(user.getUsername())
             .email(user.getEmail())
+            .fullName(user.getFullName())
+            .phone(user.getPhone())
+            .address(user.getAddress())
+            .profilePhoto(user.getProfilePhotoUrl())
             .enabled(user.getEnabled())
+            .emailVerified(user.getEmailVerified())
             .createdAt(user.getCreatedAt())
             .roles(userService.getUserRoles(user.getUsername()))
             .permissions(userService.getUserPermissions(user.getUsername()))
             .build();
   }
 }
+

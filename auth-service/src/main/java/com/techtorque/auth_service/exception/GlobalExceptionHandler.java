@@ -124,6 +124,8 @@ public class GlobalExceptionHandler {
         if (message != null && (
             message.contains("not found") ||
             message.contains("already exists") ||
+            message.contains("already taken") ||
+            message.contains("already in use") ||
             message.contains("incorrect") ||
             message.contains("Invalid") ||
             message.contains("does not have") ||
