@@ -239,7 +239,6 @@ public class AuthService {
         Set<String> roleNames = updatedUser.getRoles() != null ?
             updatedUser.getRoles().stream()
                 .map(role -> role.getName().name())
-                .collect(Collectors.toList());
                 .collect(Collectors.toSet()) :
             Set.of("CUSTOMER");
 
