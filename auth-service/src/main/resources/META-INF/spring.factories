@@ -1,2 +1,2 @@
-#org.springframework.context.ApplicationContextInitializer=\
-#com.techtorque.auth_service.config.DatabasePreflightInitializer
+org.springframework.context.ApplicationContextInitializer=\
+com.techtorque.auth_service.config.DatabasePreflightInitializer
