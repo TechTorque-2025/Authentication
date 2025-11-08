@@ -228,7 +228,7 @@ public class AuthController {
         @ApiResponse(responseCode = "403", description = "Admin role required")
     })
     @PostMapping("/users/employee")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> createEmployee(@Valid @RequestBody CreateEmployeeRequest createEmployeeRequest) {
         try {
             // Now we are calling the method that was previously unused
