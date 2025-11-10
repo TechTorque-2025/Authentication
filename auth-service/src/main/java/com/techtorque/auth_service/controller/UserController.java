@@ -44,9 +44,10 @@ public class UserController {
    * Get a list of all users in the system.
    */
   @GetMapping
-  public ResponseEntity<List<UserDto>> getAllUsers() {
+  public ResponseEntity<List<UserDto>> getAllUsers(@RequestParam(required = false) String role) {
     List<UserDto> users = userService.findAllUsers().stream()
             .map(this::convertToDto)
+            .filter(user -> role == null || user.getRoles().contains(role))
             .collect(Collectors.toList());
     return ResponseEntity.ok(users);
   }
