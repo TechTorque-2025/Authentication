@@ -21,7 +21,7 @@ import java.io.IOException;
  * The API Gateway applies CORS headers to all responses, so backend services should not
  * add CORS headers to avoid duplication.
  */
-@Component
+// @Component - DISABLED: CORS is handled by API Gateway
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CorsFilter implements Filter {
 
@@ -37,8 +37,27 @@ public class CorsFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
-        // CORS is handled by the API Gateway, so we skip CORS header injection here
-        // Just pass the request through without adding CORS headers
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+
+        String origin = httpRequest.getHeader("Origin");
+
+        // If origin is present and allowed, add CORS headers
+        if (origin != null && isOriginAllowed(origin)) {
+            httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+            httpResponse.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+            httpResponse.setHeader("Access-Control-Allow-Headers", 
+                "Authorization, Content-Type, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers");
+            httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
+            httpResponse.setHeader("Access-Control-Max-Age", "3600");
+        }
+
+        // Handle preflight OPTIONS requests
+        if ("OPTIONS".equalsIgnoreCase(httpRequest.getMethod())) {
+            httpResponse.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
+
         chain.doFilter(request, response);
     }
 
