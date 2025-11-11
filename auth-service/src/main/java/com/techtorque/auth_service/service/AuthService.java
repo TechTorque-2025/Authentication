@@ -74,6 +74,20 @@ public class AuthService {
     public LoginResponse authenticateUser(LoginRequest loginRequest, HttpServletRequest request) {
         String uname = loginRequest.getUsername();
 
+        // Check if user exists and is not verified
+        java.util.Optional<User> userOpt = userRepository.findByUsername(uname);
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByEmail(uname);
+        }
+        
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (!user.getEnabled() && !user.getEmailVerified()) {
+                throw new org.springframework.security.authentication.DisabledException(
+                    "Please verify your email address before logging in. Check your inbox for the verification link.");
+            }
+        }
+
     // load or create lock record
     com.techtorque.auth_service.entity.LoginLock lock = loginLockRepository.findByUsername(uname)
         .orElseGet(() -> com.techtorque.auth_service.entity.LoginLock.builder().username(uname).failedAttempts(0).build());
@@ -174,7 +188,7 @@ public class AuthService {
                 .fullName(registerRequest.getFullName())
                 .phone(registerRequest.getPhone())
                 .address(registerRequest.getAddress())
-                .enabled(true) // Allow login without email verification
+                .enabled(false) // Require email verification before login
                 .emailVerified(false) // Track verification status separately
                 .emailVerificationDeadline(LocalDateTime.now().plus(7, ChronoUnit.DAYS)) // 1 week deadline
                 .roles(new HashSet<>())

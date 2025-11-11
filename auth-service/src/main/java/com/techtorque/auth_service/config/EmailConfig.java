@@ -1,19 +1,12 @@
 package com.techtorque.auth_service.config;
 
-import com.techtorque.auth_service.service.EmailService;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuration for Email Service
- * Ensures EmailService bean is properly registered
+ * Placeholder for future email/gRPC specific configuration.
  */
 @Configuration
 public class EmailConfig {
-
-    @Bean
-    public EmailService emailService() {
-        return new EmailService();
-    }
+    // No explicit beans required at the moment; this class keeps the configuration namespace ready.
 }
 
