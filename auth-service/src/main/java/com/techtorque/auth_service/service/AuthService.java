@@ -82,9 +82,16 @@ public class AuthService {
         
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            if (!user.getEnabled() && !user.getEmailVerified()) {
-                throw new org.springframework.security.authentication.DisabledException(
-                    "Please verify your email address before logging in. Check your inbox for the verification link.");
+            
+            // Check if account is disabled (deactivated by admin)
+            if (!user.getEnabled()) {
+                if (!user.getEmailVerified()) {
+                    throw new org.springframework.security.authentication.DisabledException(
+                        "Please verify your email address before logging in. Check your inbox for the verification link.");
+                } else {
+                    throw new org.springframework.security.authentication.DisabledException(
+                        "Your account has been deactivated. Please contact the administrator for assistance.");
+                }
             }
         }
 
