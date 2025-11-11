@@ -81,7 +81,7 @@ public class User {
   private LocalDateTime createdAt = LocalDateTime.now();
 
   // This is the other side of the relationship
-  @ManyToMany(fetch = FetchType.EAGER)
+  @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
   @JoinTable(
           name = "user_roles",
           joinColumns = @JoinColumn(name = "user_id"),

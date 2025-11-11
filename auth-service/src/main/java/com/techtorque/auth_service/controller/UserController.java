@@ -151,6 +151,7 @@ public class UserController {
    * POST /api/v1/users/{username}/roles
    */
   @PostMapping("/{username}/roles")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   public ResponseEntity<?> manageUserRole(@PathVariable String username,
                                          @Valid @RequestBody RoleAssignmentRequest roleRequest) {
     try {
@@ -396,4 +397,3 @@ public class UserController {
             .build();
   }
 }
-

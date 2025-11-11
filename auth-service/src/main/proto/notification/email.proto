@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package notification.v1;
+
+option java_multiple_files = true;
+option java_package = "com.techtorque.notification.grpc";
+option java_outer_classname = "NotificationEmailProto";
+
+enum EmailType {
+  EMAIL_TYPE_UNSPECIFIED = 0;
+  EMAIL_TYPE_VERIFICATION = 1;
+  EMAIL_TYPE_PASSWORD_RESET = 2;
+  EMAIL_TYPE_WELCOME = 3;
+}
+
+enum DeliveryStatus {
+  DELIVERY_STATUS_UNSPECIFIED = 0;
+  DELIVERY_STATUS_ACCEPTED = 1;
+  DELIVERY_STATUS_REJECTED = 2;
+}
+
+message SendEmailRequest {
+  string to = 1;
+  string username = 2;
+  EmailType type = 3;
+  map<string, string> variables = 4;
+  string correlation_id = 5;
+}
+
+message SendEmailResponse {
+  DeliveryStatus status = 1;
+  string message_id = 2;
+  string detail = 3;
+}
+
+service NotificationEmailService {
+  rpc SendTransactionalEmail(SendEmailRequest) returns (SendEmailResponse);
+}
