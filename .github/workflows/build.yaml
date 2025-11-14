@@ -1,33 +1,33 @@
-# .github/workflows/build.yml
-# This workflow builds the JAR, then packages it as a Docker image.
+# Updated build.yaml template for microservices
+# This replaces the old build.yaml to add branch-aware image tagging
+
 name: Build and Package Service
+
 on:
   push:
     branches:
       - 'main'
-      - 'devOps'
       - 'dev'
   pull_request:
     branches:
       - 'main'
-      - 'devOps'
       - 'dev'
 
-# Permissions needed to push Docker images to your org's GitHub packages
 permissions:
   contents: read
-  packages: write 
+  packages: write
 
 jobs:
-  # JOB 1: Your original job, unchanged
+  # JOB 1: Build and test (runs on all pushes and PRs)
   build-test:
-    name: Install and Build (Tests Skipped)
+    name: Build and Test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # For Java/Spring Boot services:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -43,65 +43,94 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build with Maven (Skip Tests)
-        # As requested, we are keeping -DskipTests for now
+      - name: Build with Maven
         run: mvn -B clean package -DskipTests --file auth-service/pom.xml
 
-      - name: Upload Build Artifact (JAR)
-        # We upload the JAR so the next job can use it
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: auth-service-jar
+          name: service-jar
           path: auth-service/target/*.jar
 
-  # JOB 2: New job to package the service as a Docker image
+      # For Node.js/Next.js services (Frontend):
+      # - name: Use Node.js and cache npm
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '22'
+      #     cache: 'npm'
+      #
+      # - name: Install dependencies
+      #   run: npm ci
+      #
+      # - name: Run linter
+      #   run: npm run lint
+      #
+      # - name: Build
+      #   run: npm run build
+
+  # JOB 2: Package as Docker image (only on pushes to main/dev, not PRs)
   build-and-push-docker:
     name: Build & Push Docker Image
-    # This job only runs on pushes to 'main', not on PRs
-    # Ensures you only publish final images for merged code
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/devOps' || github.ref == 'refs/heads/dev'
+    needs: build-test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
     runs-on: ubuntu-latest
-    # This job runs *after* the build-test job succeeds
-    needs: build-test 
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      # We need the JAR file that the 'build-test' job created
+      # For Java services: download JAR from previous job
       - name: Download JAR Artifact
         uses: actions/download-artifact@v4
         with:
-          name: auth-service-jar
+          name: service-jar
           path: auth-service/target/
 
-      # This action generates smart tags for your Docker image
-      # e.g., 'ghcr.io/your-org/auth-service:latest'
-      # e.g., 'ghcr.io/your-org/auth-service:a1b2c3d' (from the commit SHA)
-      - name: Docker meta
+      - name: Extract branch name
+        id: branch
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          echo "📍 Building for branch: ${BRANCH_NAME}"
+
+      - name: Docker meta (with branch-aware tags)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }} # e.g., ghcr.io/randitha/Authentication
+          images: ghcr.io/techtorque-2025/authentication
           tags: |
-            type=sha,prefix=
+            # Branch + short SHA (e.g., dev-abc1234 or main-xyz5678)
+            type=raw,value=${{ steps.branch.outputs.name }}-{{sha}},enable=true
+            # Latest tag only for main branch
             type=raw,value=latest,enable={{is_default_branch}}
+          flavor: |
+            latest=false
 
-      # Logs you into the GitHub Container Registry (GHCR)
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }} # This token is auto-generated
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Builds the Docker image and pushes it to GHCR
-      # This assumes you have a 'Dockerfile' in the root of 'Authentication'
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: . # Assumes Dockerfile is in the root of this repo
-          # The Dockerfile build will copy the JAR from auth-service/target/
+          context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      
+      - name: Image Summary
+        run: |
+          echo "### 🐳 Docker Image Built" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags pushed:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+# REPLACEMENTS NEEDED:
+# - auth-service: e.g., "auth-service", "time-logging-service" (for Java services)
+# - authentication: e.g., "authentication", "timelogging_service", "frontend_web"
+# - Uncomment Node.js steps for Frontend_Web
