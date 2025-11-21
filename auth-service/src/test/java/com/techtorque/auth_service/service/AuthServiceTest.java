@@ -172,7 +172,9 @@ class AuthServiceTest {
                 .thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUsername()).thenReturn("testuser");
-        when(userDetails.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        when(userDetails.getAuthorities())
+                .thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(
+                        new SimpleGrantedAuthority("ROLE_CUSTOMER")));
         when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(tokenService.createRefreshToken(eq(testUser), anyString(), anyString())).thenReturn("refresh-token");
@@ -205,7 +207,8 @@ class AuthServiceTest {
                 .thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUsername()).thenReturn("test@example.com");
-        when(userDetails.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        when(userDetails.getAuthorities()).thenReturn((Collection<? extends GrantedAuthority>) java.util.Arrays
+                .asList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
 
         loginRequest.setUsername("test@example.com");
 
@@ -268,7 +271,9 @@ class AuthServiceTest {
                 .thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUsername()).thenReturn("testuser");
-        when(userDetails.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        when(userDetails.getAuthorities())
+                .thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(
+                        new SimpleGrantedAuthority("ROLE_CUSTOMER")));
         when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(tokenService.createRefreshToken(eq(testUser), anyString(), anyString())).thenReturn("refresh-token");
@@ -544,7 +549,9 @@ class AuthServiceTest {
                 .thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUsername()).thenReturn("testuser");
-        when(userDetails.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        when(userDetails.getAuthorities())
+                .thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(
+                        new SimpleGrantedAuthority("ROLE_CUSTOMER")));
         when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(tokenService.createRefreshToken(eq(testUser), isNull(), isNull())).thenReturn("refresh-token");
