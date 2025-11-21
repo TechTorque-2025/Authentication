@@ -244,7 +244,7 @@ class UserServiceTest {
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         // When
-        User result = userService.createEmployee("employee", "employee@example.com", "password");
+        User result = userService.createEmployee("employee", "employee@example.com", "password", null);
 
         // Then
         assertThat(result).isNotNull();
@@ -263,7 +263,7 @@ class UserServiceTest {
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         // When
-        User result = userService.createAdmin("admin", "admin@example.com", "password");
+        User result = userService.createAdmin("admin", "admin@example.com", "password", null);
 
         // Then
         assertThat(result).isNotNull();

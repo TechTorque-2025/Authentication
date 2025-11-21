@@ -14,11 +14,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CreateEmployeeRequest {
-    
+
     private String username;
     private String email;
     private String password;
-    
+
+    private String fullName;
+
     // Optional: Additional employee-specific fields
     private String firstName;
     private String lastName;
