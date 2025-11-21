@@ -173,7 +173,7 @@ class AuthServiceTest {
                 when(authentication.getPrincipal()).thenReturn(userDetails);
                 when(userDetails.getUsername()).thenReturn("testuser");
                 when(userDetails.getAuthorities())
-                                .thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(
+                                .thenReturn((Collection) java.util.Collections.singletonList(
                                                 new SimpleGrantedAuthority("ROLE_CUSTOMER")));
                 when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
                 when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));

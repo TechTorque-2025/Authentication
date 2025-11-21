@@ -582,7 +582,7 @@ class UserServiceTest {
 
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        when(authentication.getAuthorities()).thenReturn((Collection) java.util.Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")));
 
         // When/Then
         assertThatThrownBy(() -> userService.assignRoleToUser("testuser", "ADMIN"))
@@ -601,7 +601,7 @@ class UserServiceTest {
 
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")));
+        when(authentication.getAuthorities()).thenReturn((Collection) java.util.Collections.singletonList(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")));
 
         // When
         userService.assignRoleToUser("testuser", "ADMIN");
