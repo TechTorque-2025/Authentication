@@ -44,10 +44,13 @@ public class UserService implements UserDetailsService {
         private final RefreshTokenRepository refreshTokenRepository;
         private final VerificationTokenRepository verificationTokenRepository;
         private final LoginLogRepository loginLogRepository;
+        private final EmailService emailService;
+        private final TokenService tokenService;
 
         public UserService(UserRepository userRepository, RoleRepository roleRepository, @Lazy PasswordEncoder passwordEncoder,
                           LoginLockRepository loginLockRepository, RefreshTokenRepository refreshTokenRepository,
-                          VerificationTokenRepository verificationTokenRepository, LoginLogRepository loginLogRepository) {
+                          VerificationTokenRepository verificationTokenRepository, LoginLogRepository loginLogRepository,
+                          EmailService emailService, TokenService tokenService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
@@ -55,6 +58,8 @@ public class UserService implements UserDetailsService {
         this.refreshTokenRepository = refreshTokenRepository;
         this.verificationTokenRepository = verificationTokenRepository;
         this.loginLogRepository = loginLogRepository;
+        this.emailService = emailService;
+        this.tokenService = tokenService;
     }
 
     /**
@@ -177,7 +182,13 @@ public class UserService implements UserDetailsService {
                 .roles(Set.of(employeeRole)) // Only EMPLOYEE role
                 .build();
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        
+        // Create verification token and send email
+        String token = tokenService.createVerificationToken(savedUser);
+        emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getUsername(), token);
+        
+        return savedUser;
     }
 
     /**
@@ -213,7 +224,13 @@ public class UserService implements UserDetailsService {
                 .roles(Set.of(adminRole)) // Only ADMIN role
                 .build();
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        
+        // Create verification token and send email
+        String token = tokenService.createVerificationToken(savedUser);
+        emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getUsername(), token);
+        
+        return savedUser;
     }
 
     /**
