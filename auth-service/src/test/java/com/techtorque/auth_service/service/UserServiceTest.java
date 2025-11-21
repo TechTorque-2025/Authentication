@@ -577,8 +577,8 @@ class UserServiceTest {
     @Test
     void assignRoleToUser_WhenAssigningAdminRoleWithoutSuperAdminAuth_ShouldThrowAccessDeniedException() {
         // Given
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(roleRepository.findByName(RoleName.ADMIN)).thenReturn(Optional.of(adminRole));
+        lenient().when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(roleRepository.findByName(RoleName.SUPER_ADMIN)).thenReturn(Optional.of(superAdminRole));
 
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);

@@ -208,7 +208,7 @@ class AuthServiceTest {
         void authenticateUser_WhenUserNotFound_ShouldCheckByEmail() {
                 // Given
                 when(userRepository.findByUsername("test@example.com")).thenReturn(Optional.empty());
-                when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+                lenient().when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
                 when(loginLockRepository.findByUsername("test@example.com")).thenReturn(Optional.of(loginLock));
                 when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                                 .thenReturn(authentication);
@@ -284,7 +284,7 @@ class AuthServiceTest {
                                                 .singleton(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
                 when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
                 when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-                when(tokenService.createRefreshToken(any(User.class), anyString(), anyString()))
+                when(tokenService.createRefreshToken(any(User.class), eq("192.168.1.1"), isNull()))
                                 .thenReturn("refresh-token");
 
                 // When
