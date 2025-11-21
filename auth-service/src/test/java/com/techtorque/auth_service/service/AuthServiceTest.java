@@ -272,8 +272,7 @@ class AuthServiceTest {
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUsername()).thenReturn("testuser");
         when(userDetails.getAuthorities())
-                .thenReturn(java.util.Collections
-                        .<GrantedAuthority>singletonList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+                .thenReturn((Collection) java.util.Collections.singleton(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
         when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(tokenService.createRefreshToken(eq(testUser), anyString(), anyString())).thenReturn("refresh-token");
