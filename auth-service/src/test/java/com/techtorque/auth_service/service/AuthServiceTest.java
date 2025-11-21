@@ -95,17 +95,23 @@ class AuthServiceTest {
                 ReflectionTestUtils.setField(authService, "maxFailedAttempts", 3);
                 ReflectionTestUtils.setField(authService, "lockDurationMinutes", 15L);
 
+                // Mock request IP address
+                when(request.getRemoteAddr()).thenReturn("192.168.1.1");
+                when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+
                 // Create test roles
                 customerRole = Role.builder()
                                 .id(1L)
                                 .name(RoleName.CUSTOMER)
                                 .description("Customer role")
+                                .permissions(Collections.emptySet())
                                 .build();
 
                 adminRole = Role.builder()
                                 .id(2L)
                                 .name(RoleName.ADMIN)
                                 .description("Admin role")
+                                .permissions(Collections.emptySet())
                                 .build();
 
                 // Create test user
@@ -326,7 +332,7 @@ class AuthServiceTest {
                                 user.getFullName().equals("New User") &&
                                 !user.getEnabled() &&
                                 !user.getEmailVerified()));
-                verify(emailService).sendVerificationEmail("new@example.com", "new@example.com", "verification-token");
+                verify(emailService).sendVerificationEmail("test@example.com", "testuser", "verification-token");
         }
 
         @Test
