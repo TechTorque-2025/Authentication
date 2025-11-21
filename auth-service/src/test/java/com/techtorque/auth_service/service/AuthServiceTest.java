@@ -95,9 +95,9 @@ class AuthServiceTest {
                 ReflectionTestUtils.setField(authService, "maxFailedAttempts", 3);
                 ReflectionTestUtils.setField(authService, "lockDurationMinutes", 15L);
 
-                // Mock request IP address
-                when(request.getRemoteAddr()).thenReturn("192.168.1.1");
-                when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+                // Mock request IP address (lenient to avoid unnecessary stubbing warnings)
+                lenient().when(request.getRemoteAddr()).thenReturn("192.168.1.1");
+                lenient().when(request.getHeader("X-Forwarded-For")).thenReturn(null);
 
                 // Create test roles
                 customerRole = Role.builder()
@@ -267,7 +267,7 @@ class AuthServiceTest {
                                 .isInstanceOf(BadCredentialsException.class)
                                 .hasMessageContaining("Account is temporarily locked");
 
-                verify(loginAuditService).recordLogin(eq("testuser"), eq(false), anyString(), anyString());
+                verify(loginAuditService).recordLogin(eq("testuser"), eq(false), eq("192.168.1.1"), isNull());
         }
 
         @Test
@@ -311,7 +311,7 @@ class AuthServiceTest {
                                 .hasMessage("Invalid username or password");
 
                 verify(loginAuditService).incrementFailedAttempt("testuser", 15L, 3);
-                verify(loginAuditService).recordLogin(eq("testuser"), eq(false), anyString(), anyString());
+                verify(loginAuditService).recordLogin(eq("testuser"), eq(false), eq("192.168.1.1"), isNull());
         }
 
         @Test
