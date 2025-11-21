@@ -222,7 +222,7 @@ class AuthServiceTest {
                 // When/Then
                 when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
                 when(userRepository.findByUsername("test@example.com")).thenReturn(Optional.of(testUser));
-                when(tokenService.createRefreshToken(any(User.class), anyString(), anyString()))
+                when(tokenService.createRefreshToken(any(User.class), eq("192.168.1.1"), isNull()))
                                 .thenReturn("refresh-token");
 
                 LoginResponse response = authService.authenticateUser(loginRequest, request);
@@ -423,7 +423,7 @@ class AuthServiceTest {
                                 .thenReturn(verificationToken);
                 when(userRepository.save(any(User.class))).thenReturn(testUser);
                 when(jwtUtil.generateJwtToken(any(UserDetails.class), anyList())).thenReturn("jwt-token");
-                when(tokenService.createRefreshToken(any(User.class), anyString(), anyString()))
+                when(tokenService.createRefreshToken(any(User.class), eq("192.168.1.1"), isNull()))
                                 .thenReturn("refresh-token");
 
                 // When
