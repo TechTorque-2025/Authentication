@@ -207,8 +207,8 @@ class AuthServiceTest {
                 .thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUsername()).thenReturn("test@example.com");
-        when(userDetails.getAuthorities()).thenReturn((Collection<? extends GrantedAuthority>) java.util.Arrays
-                .asList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        when(userDetails.getAuthorities()).thenReturn((Collection) java.util.Collections
+                .singletonList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
 
         loginRequest.setUsername("test@example.com");
 
