@@ -74,28 +74,28 @@ class UserServiceTest {
     void setUp() {
         // Create test roles
         customerRole = Role.builder()
-                .id("role-1")
+                .id(1L)
                 .name(RoleName.CUSTOMER)
                 .description("Customer role")
                 .permissions(new HashSet<>())
                 .build();
 
         employeeRole = Role.builder()
-                .id("role-2")
+                .id(2L)
                 .name(RoleName.EMPLOYEE)
                 .description("Employee role")
                 .permissions(new HashSet<>())
                 .build();
 
         adminRole = Role.builder()
-                .id("role-3")
+                .id(3L)
                 .name(RoleName.ADMIN)
                 .description("Admin role")
                 .permissions(new HashSet<>())
                 .build();
 
         superAdminRole = Role.builder()
-                .id("role-4")
+                .id(4L)
                 .name(RoleName.SUPER_ADMIN)
                 .description("Super Admin role")
                 .permissions(new HashSet<>())
@@ -103,7 +103,7 @@ class UserServiceTest {
 
         // Create test user
         testUser = User.builder()
-                .id("user-1")
+                .id(1L)
                 .username("testuser")
                 .email("test@example.com")
                 .password("encoded-password")
@@ -582,7 +582,7 @@ class UserServiceTest {
 
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        when(authentication.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_ADMIN")));
 
         // When/Then
         assertThatThrownBy(() -> userService.assignRoleToUser("testuser", "ADMIN"))
@@ -601,7 +601,7 @@ class UserServiceTest {
 
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getAuthorities()).thenReturn(List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")));
+        when(authentication.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")));
 
         // When
         userService.assignRoleToUser("testuser", "ADMIN");

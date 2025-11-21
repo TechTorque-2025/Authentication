@@ -97,20 +97,20 @@ class AuthServiceTest {
 
         // Create test roles
         customerRole = Role.builder()
-                .id("role-1")
+                .id(1L)
                 .name(RoleName.CUSTOMER)
                 .description("Customer role")
                 .build();
 
         adminRole = Role.builder()
-                .id("role-2")
+                .id(2L)
                 .name(RoleName.ADMIN)
                 .description("Admin role")
                 .build();
 
         // Create test user
         testUser = User.builder()
-                .id("user-1")
+                .id(1L)
                 .username("testuser")
                 .email("test@example.com")
                 .password("encoded-password")
@@ -137,7 +137,7 @@ class AuthServiceTest {
 
         // Create test login lock
         loginLock = LoginLock.builder()
-                .id("lock-1")
+                .id(1L)
                 .username("testuser")
                 .failedAttempts(0)
                 .lockUntil(null)
@@ -172,7 +172,7 @@ class AuthServiceTest {
                 .thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUsername()).thenReturn("testuser");
-        when(userDetails.getAuthorities()).thenReturn(List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        when(userDetails.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
         when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(tokenService.createRefreshToken(eq(testUser), anyString(), anyString())).thenReturn("refresh-token");
@@ -205,7 +205,7 @@ class AuthServiceTest {
                 .thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUsername()).thenReturn("test@example.com");
-        when(userDetails.getAuthorities()).thenReturn(List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        when(userDetails.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
 
         loginRequest.setUsername("test@example.com");
 
@@ -268,7 +268,7 @@ class AuthServiceTest {
                 .thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUsername()).thenReturn("testuser");
-        when(userDetails.getAuthorities()).thenReturn(List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        when(userDetails.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
         when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(tokenService.createRefreshToken(eq(testUser), anyString(), anyString())).thenReturn("refresh-token");
@@ -352,7 +352,7 @@ class AuthServiceTest {
     @Test
     void registerUser_WhenEmployeeRole_ShouldAssignEmployeeRole() {
         // Given
-        Role employeeRole = Role.builder().id("role-3").name(RoleName.EMPLOYEE).build();
+        Role employeeRole = Role.builder().id(3L).name(RoleName.EMPLOYEE).build();
         registerRequest.setRoles(Set.of("employee"));
         when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
         when(roleRepository.findByName(RoleName.EMPLOYEE)).thenReturn(Optional.of(employeeRole));
@@ -544,7 +544,7 @@ class AuthServiceTest {
                 .thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUsername()).thenReturn("testuser");
-        when(userDetails.getAuthorities()).thenReturn(List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        when(userDetails.getAuthorities()).thenReturn(java.util.Arrays.<org.springframework.security.core.GrantedAuthority>asList(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
         when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(tokenService.createRefreshToken(eq(testUser), isNull(), isNull())).thenReturn("refresh-token");
