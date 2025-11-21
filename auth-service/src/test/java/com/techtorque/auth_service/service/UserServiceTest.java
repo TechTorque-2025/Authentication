@@ -646,7 +646,7 @@ class UserServiceTest {
         // Given
         testUser.getRoles().add(superAdminRole);
         lenient().when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(roleRepository.findByName(RoleName.SUPER_ADMIN)).thenReturn(Optional.of(superAdminRole));
+        lenient().when(roleRepository.findByName(RoleName.SUPER_ADMIN)).thenReturn(Optional.of(superAdminRole));
 
         SecurityContextHolder.setContext(securityContext);
         when(securityContext.getAuthentication()).thenReturn(authentication);
