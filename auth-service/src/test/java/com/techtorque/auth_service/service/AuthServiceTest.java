@@ -183,7 +183,7 @@ class AuthServiceTest {
                                                 new SimpleGrantedAuthority("ROLE_CUSTOMER")));
                 when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
                 when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-                when(tokenService.createRefreshToken(eq(testUser), anyString(), anyString()))
+                when(tokenService.createRefreshToken(any(User.class), anyString(), anyString()))
                                 .thenReturn("refresh-token");
                 when(request.getHeader("X-Forwarded-For")).thenReturn(null);
                 when(request.getRemoteAddr()).thenReturn("127.0.0.1");
@@ -222,7 +222,7 @@ class AuthServiceTest {
                 // When/Then
                 when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
                 when(userRepository.findByUsername("test@example.com")).thenReturn(Optional.of(testUser));
-                when(tokenService.createRefreshToken(eq(testUser), anyString(), anyString()))
+                when(tokenService.createRefreshToken(any(User.class), anyString(), anyString()))
                                 .thenReturn("refresh-token");
 
                 LoginResponse response = authService.authenticateUser(loginRequest, request);
@@ -284,7 +284,7 @@ class AuthServiceTest {
                                                 .singleton(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
                 when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
                 when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-                when(tokenService.createRefreshToken(eq(testUser), anyString(), anyString()))
+                when(tokenService.createRefreshToken(any(User.class), anyString(), anyString()))
                                 .thenReturn("refresh-token");
 
                 // When
@@ -423,7 +423,7 @@ class AuthServiceTest {
                                 .thenReturn(verificationToken);
                 when(userRepository.save(any(User.class))).thenReturn(testUser);
                 when(jwtUtil.generateJwtToken(any(UserDetails.class), anyList())).thenReturn("jwt-token");
-                when(tokenService.createRefreshToken(eq(testUser), anyString(), anyString()))
+                when(tokenService.createRefreshToken(any(User.class), anyString(), anyString()))
                                 .thenReturn("refresh-token");
 
                 // When
@@ -565,7 +565,7 @@ class AuthServiceTest {
                                                 new SimpleGrantedAuthority("ROLE_CUSTOMER")));
                 when(jwtUtil.generateJwtToken(eq(userDetails), anyList())).thenReturn("jwt-token");
                 when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-                when(tokenService.createRefreshToken(eq(testUser), isNull(), isNull())).thenReturn("refresh-token");
+                when(tokenService.createRefreshToken(any(User.class), isNull(), isNull())).thenReturn("refresh-token");
 
                 // When
                 LoginResponse response = authService.authenticateUser(loginRequest, null);
@@ -584,7 +584,7 @@ class AuthServiceTest {
                                 .thenReturn(verificationToken);
                 when(userRepository.save(any(User.class))).thenReturn(testUser);
                 when(jwtUtil.generateJwtToken(any(UserDetails.class), anyList())).thenReturn("jwt-token");
-                when(tokenService.createRefreshToken(eq(testUser), isNull(), isNull())).thenReturn("refresh-token");
+                when(tokenService.createRefreshToken(any(User.class), isNull(), isNull())).thenReturn("refresh-token");
 
                 // When
                 LoginResponse response = authService.verifyEmail("verification-token", null);
