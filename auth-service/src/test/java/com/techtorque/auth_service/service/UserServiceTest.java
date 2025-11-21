@@ -645,7 +645,7 @@ class UserServiceTest {
     void revokeRoleFromUser_WhenRevokingOwnSuperAdminRole_ShouldThrowAccessDeniedException() {
         // Given
         testUser.getRoles().add(superAdminRole);
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(roleRepository.findByName(RoleName.SUPER_ADMIN)).thenReturn(Optional.of(superAdminRole));
 
         SecurityContextHolder.setContext(securityContext);
