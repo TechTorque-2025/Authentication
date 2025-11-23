@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/users")
 // CORS handled by API Gateway; remove @CrossOrigin to avoid conflicts
 // @CrossOrigin(origins = "*", maxAge = 3600)
-@PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
 @Tag(name = "User Management", description = "User management endpoints (Admin/Super Admin only)")
 @SecurityRequirement(name = "bearerAuth")
 public class UserController {
@@ -44,6 +43,7 @@ public class UserController {
    * Get a list of all users in the system.
    */
   @GetMapping
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   public ResponseEntity<List<UserDto>> getAllUsers(@RequestParam(required = false) String role) {
     List<UserDto> users = userService.findAllUsers().stream()
             .map(this::convertToDto)
@@ -56,6 +56,7 @@ public class UserController {
    * Get detailed information for a single user by their username.
    */
   @GetMapping("/{username}")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   public ResponseEntity<UserDto> getUserByUsername(@PathVariable String username) {
     return userService.findByUsername(username)
             .map(user -> ResponseEntity.ok(convertToDto(user)))
@@ -66,6 +67,7 @@ public class UserController {
    * Disable a user's account.
    */
   @PostMapping("/{username}/disable")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   public ResponseEntity<?> disableUser(@PathVariable String username) {
     try {
       userService.disableUser(username);
@@ -79,6 +81,7 @@ public class UserController {
    * Enable a user's account.
    */
   @PostMapping("/{username}/enable")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   public ResponseEntity<?> enableUser(@PathVariable String username) {
     try {
       userService.enableUser(username);
@@ -102,6 +105,7 @@ public class UserController {
    * Delete a user from the system permanently.
    */
   @DeleteMapping("/{username}")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   public ResponseEntity<?> deleteUser(@PathVariable String username) {
     try {
       userService.deleteUser(username);
@@ -116,6 +120,7 @@ public class UserController {
    * PUT /api/v1/users/{username}
    */
   @PutMapping("/{username}")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   public ResponseEntity<?> updateUser(@PathVariable String username, 
                                      @Valid @RequestBody UpdateUserRequest updateRequest) {
     try {
@@ -136,6 +141,7 @@ public class UserController {
    * POST /api/v1/users/{username}/reset-password
    */
   @PostMapping("/{username}/reset-password")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
   public ResponseEntity<?> resetUserPassword(@PathVariable String username,
                                            @Valid @RequestBody ResetPasswordRequest resetRequest) {
     try {
