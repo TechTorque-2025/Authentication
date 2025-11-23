@@ -14,11 +14,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CreateAdminRequest {
-    
+
     private String username;
     private String email;
     private String password;
-    
+
+    private String fullName;
+
     // Optional: Additional admin-specific fields
     private String firstName;
     private String lastName;
